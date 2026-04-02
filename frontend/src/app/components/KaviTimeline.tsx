@@ -1,0 +1,403 @@
+import { useRef } from "react";
+import { motion, useInView } from "motion/react";
+import { SectionLabel } from "./KaviAbout";
+
+type TimelineType = "experience" | "education";
+
+type TimelineEntry = {
+  id: number;
+  type: TimelineType;
+  icon: string;
+  side: "left" | "right";
+  org: string;
+  role: string;
+  dates?: string;
+  startDate?: string;
+  isCurrent?: boolean;
+  description: string;
+};
+
+// EXPERIENCE data (newest first)
+const experienceEntries: TimelineEntry[] = [
+  {
+    id: 1,
+    type: "experience",
+    org: "Toyota Lanka",
+    role: "Software Engineering Intern",
+    startDate: "October 2025",
+    isCurrent: true,
+    icon: "💼",
+    side: "left",
+    description:
+      "Working as a Software Engineering Intern contributing to full stack development and DevOps practices. Building and maintaining real-world applications, containerizing services, and supporting CI/CD pipeline workflows in a professional engineering environment.",
+  },
+  {
+    id: 2,
+    type: "experience",
+    org: "Toyota Lanka — VCMS (AutoStream)",
+    role: "Sales Intern",
+    dates: "June 2025 - October 2025",
+    icon: "🤝",
+    side: "right",
+    description:
+      "Acted as the key connection between car dealerships and individual car sale owners, onboarding them onto the AutoStream platform. Managed the end-to-end process of collecting vehicle details and publishing listings on AutoStream. Built and maintained relationships with clients to ensure smooth ad uploads and platform engagement.",
+  },
+  {
+    id: 3,
+    type: "experience",
+    org: "Cargills Food City - Hanwella",
+    role: "Part-Time Worker",
+    dates: "August 2024 - December 2024",
+    icon: "🏪",
+    side: "left",
+    description:
+      "Assisted customers with purchases and inquiries, maintained store organization, and supported inventory tasks. Worked with team members to meet sales goals and ensure efficient daily operations in a fast-paced retail environment.",
+  },
+];
+
+// EDUCATION data
+const educationEntries: TimelineEntry[] = [
+  {
+    id: 4,
+    type: "education",
+    org: "University of Plymouth via NSBM Green University, Sri Lanka",
+    role: "BSc (Hons) Computer Science",
+    dates: "October 2023 - Present",
+    icon: "🎓",
+    side: "right",
+    description:
+      "Final year student under the transnational education partnership with the University of Plymouth, UK. Coursework and assessments are conducted at NSBM Green University, aligned with UK academic standards.",
+  },
+];
+
+function TimelineCard({
+  entry,
+  index,
+}: {
+  entry: TimelineEntry;
+  index: number;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-60px" });
+  const isLeft = entry.side === "left";
+  const isExperience = entry.type === "experience";
+  const accentColor = isExperience ? "#4F8EF7" : "#7C3AED";
+  const accentBg = isExperience ? "rgba(79,142,247,0.1)" : "rgba(124,58,237,0.1)";
+  const accentBorder = isExperience ? "rgba(79,142,247,0.2)" : "rgba(124,58,237,0.2)";
+  const isCurrent = Boolean(entry.isCurrent);
+
+  return (
+    <div
+      ref={ref}
+      style={{
+        display: "flex",
+        justifyContent: isLeft ? "flex-end" : "flex-start",
+        paddingLeft: isLeft ? 0 : "calc(50% + 24px)",
+        paddingRight: isLeft ? "calc(50% + 24px)" : 0,
+        marginBottom: "40px",
+        position: "relative",
+      }}
+      className="timeline-card-wrapper"
+    >
+      <motion.div
+        initial={{ opacity: 0, x: isLeft ? -50 : 50, y: 10 }}
+        animate={inView ? { opacity: 1, x: 0, y: 0 } : {}}
+        transition={{
+          duration: 0.65,
+          ease: [0.16, 1, 0.3, 1],
+          delay: index * 0.1,
+        }}
+        style={{
+          width: "100%",
+          maxWidth: "440px",
+          padding: "24px",
+          borderRadius: "20px",
+          background: "rgba(255,255,255,0.04)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          border: isCurrent ? "1px solid rgba(34,197,94,0.35)" : "1px solid rgba(255,255,255,0.08)",
+          boxShadow: isCurrent
+            ? "0 0 40px rgba(34,197,94,0.12), 0 4px 24px rgba(0,0,0,0.2)"
+            : "0 4px 24px rgba(0,0,0,0.2)",
+          transition: "background 200ms ease, border-color 200ms ease",
+          cursor: "default",
+        }}
+        whileHover={{
+          background: isCurrent
+            ? "rgba(34,197,94,0.10)"
+            : isExperience
+              ? "rgba(79,142,247,0.06)"
+              : "rgba(124,58,237,0.06)",
+          borderColor: isCurrent ? "rgba(34,197,94,0.35)" : accentBorder,
+        }}
+      >
+        {/* Header */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            gap: "12px",
+            marginBottom: "12px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: "12px",
+                background: accentBg,
+                border: `1px solid ${accentBorder}`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "22px",
+                flexShrink: 0,
+              }}
+            >
+              {entry.icon}
+            </div>
+            <div>
+              <div
+                style={{
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  fontSize: "15px",
+                  fontWeight: 700,
+                  color: "#fff",
+                  lineHeight: 1.3,
+                }}
+              >
+                {entry.org}
+              </div>
+              <div
+                style={{
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize: "13px",
+                  color: "rgba(255,255,255,0.5)",
+                  marginTop: "2px",
+                }}
+              >
+                {entry.role}
+              </div>
+            </div>
+          </div>
+          {/* Date badge */}
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+            {isCurrent ? (
+              <>
+                <div
+                  style={{
+                    padding: "4px 10px",
+                    borderRadius: "100px",
+                    background: accentBg,
+                    border: `1px solid ${accentBorder}`,
+                    fontFamily: "'Inter', sans-serif",
+                    fontSize: "11px",
+                    fontWeight: 500,
+                    color: accentColor,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {entry.startDate}
+                </div>
+                <div
+                  style={{
+                    padding: "4px 10px",
+                    borderRadius: "100px",
+                    background: "rgba(34,197,94,0.12)",
+                    border: "1px solid rgba(34,197,94,0.35)",
+                    fontFamily: "'Inter', sans-serif",
+                    fontSize: "11px",
+                    fontWeight: 600,
+                    color: "#22C55E",
+                    whiteSpace: "nowrap",
+                    boxShadow: "0 0 18px rgba(34,197,94,0.25)",
+                  }}
+                >
+                  Present
+                </div>
+              </>
+            ) : (
+              <div
+                style={{
+                  padding: "4px 10px",
+                  borderRadius: "100px",
+                  background: accentBg,
+                  border: `1px solid ${accentBorder}`,
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize: "11px",
+                  fontWeight: 500,
+                  color: accentColor,
+                  whiteSpace: "nowrap",
+                  flexShrink: 0,
+                }}
+              >
+                {entry.dates}
+              </div>
+            )}
+          </div>
+        </div>
+        <p
+          style={{
+            fontFamily: "'Inter', sans-serif",
+            fontSize: "14px",
+            lineHeight: 1.65,
+            color: "rgba(255,255,255,0.5)",
+            margin: 0,
+          }}
+        >
+          {entry.description}
+        </p>
+      </motion.div>
+    </div>
+  );
+}
+
+export function KaviTimeline() {
+  const ref = useRef<HTMLElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
+
+  return (
+    <section
+      id="timeline"
+      ref={ref}
+      style={{ padding: "120px 24px", position: "relative" }}
+    >
+      <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
+        <SectionLabel label="Experience & Education" delay={0} inView={inView} />
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ delay: 0.15, duration: 0.6 }}
+          style={{
+            fontFamily: "'Plus Jakarta Sans', sans-serif",
+            fontSize: "clamp(28px, 4vw, 48px)",
+            fontWeight: 800,
+            color: "#fff",
+            letterSpacing: "-0.03em",
+            margin: "20px 0 60px 0",
+          }}
+        >
+          My Journey
+        </motion.h2>
+
+        {/* Experience subsection */}
+        <div style={{ marginBottom: "32px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "28px" }}>
+            <span style={{ fontSize: "22px" }}>💼</span>
+            <div
+              style={{
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                fontSize: "clamp(22px, 3vw, 32px)",
+                fontWeight: 800,
+                color: "#fff",
+                letterSpacing: "-0.03em",
+                lineHeight: 1.1,
+                textAlign: "left",
+              }}
+            >
+              Experience
+            </div>
+          </div>
+
+          <div style={{ position: "relative" }}>
+            {/* Center line */}
+            <motion.div
+              initial={{ scaleY: 0 }}
+              animate={inView ? { scaleY: 1 } : {}}
+              transition={{ duration: 1.2, delay: 0.3, ease: "easeOut" }}
+              style={{
+                position: "absolute",
+                left: "50%",
+                top: 0,
+                bottom: 0,
+                width: 1,
+                background:
+                  "linear-gradient(to bottom, transparent, rgba(79,142,247,0.35) 10%, rgba(79,142,247,0.35) 90%, transparent)",
+                transformOrigin: "top",
+              }}
+              className="timeline-line"
+            />
+
+            {experienceEntries.map((entry, i) => (
+              <TimelineCard key={entry.id} entry={entry} index={i} />
+            ))}
+          </div>
+        </div>
+
+        {/* Thin divider between Experience and Education */}
+        <div style={{ height: 1, background: "rgba(255,255,255,0.08)", margin: "34px 0" }} />
+
+        {/* Education subsection */}
+        <div style={{ marginTop: "10px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "28px" }}>
+            <span style={{ fontSize: "22px" }}>🎓</span>
+            <div
+              style={{
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                fontSize: "clamp(22px, 3vw, 32px)",
+                fontWeight: 800,
+                color: "#fff",
+                letterSpacing: "-0.03em",
+                lineHeight: 1.1,
+                textAlign: "left",
+              }}
+            >
+              Education
+            </div>
+          </div>
+
+          <div style={{ position: "relative" }}>
+            {/* Center line */}
+            <motion.div
+              initial={{ scaleY: 0 }}
+              animate={inView ? { scaleY: 1 } : {}}
+              transition={{ duration: 1.2, delay: 0.45, ease: "easeOut" }}
+              style={{
+                position: "absolute",
+                left: "50%",
+                top: 0,
+                bottom: 0,
+                width: 1,
+                background:
+                  "linear-gradient(to bottom, transparent, rgba(124,58,237,0.35) 10%, rgba(124,58,237,0.35) 90%, transparent)",
+                transformOrigin: "top",
+              }}
+              className="timeline-line"
+            />
+
+            {educationEntries.map((entry, i) => (
+              <TimelineCard key={entry.id} entry={entry} index={experienceEntries.length + i} />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @media (max-width: 768px) {
+          .timeline-line { display: none !important; }
+          .timeline-card-wrapper {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            justify-content: center !important;
+          }
+          .timeline-card-wrapper > div {
+            max-width: 100% !important;
+          }
+          #timeline {
+            padding: 80px 24px !important;
+          }
+        }
+        @media (max-width: 480px) {
+          #timeline {
+            padding: 64px 16px !important;
+          }
+          .timeline-card-wrapper > div > div {
+            padding: 18px !important;
+          }
+        }
+      `}</style>
+    </section>
+  );
+}

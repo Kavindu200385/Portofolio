@@ -1,0 +1,345 @@
+import { useRef, useState } from "react";
+import { motion, useInView } from "motion/react";
+import { SectionLabel } from "./KaviAbout";
+
+const skills = [
+  {
+    id: 1,
+    name: "HTML & CSS",
+    desc: "Semantic markup and modern CSS layouts",
+    icon: "🌐",
+    size: "normal",
+    color: "#e34c26",
+  },
+  {
+    id: 2,
+    name: "JavaScript",
+    desc: "ES2022+, async patterns, DOM manipulation",
+    icon: "⚡",
+    size: "wide",
+    color: "#f7df1e",
+  },
+  {
+    id: 3,
+    name: "Docker",
+    desc: "Containerization, compose, multi-stage builds, networking",
+    icon: "🐳",
+    size: "wide",
+    color: "#2496ed",
+  },
+  {
+    id: 4,
+    name: "Python",
+    desc: "Scripting, automation & ML",
+    icon: "🐍",
+    size: "normal",
+    color: "#3572a5",
+  },
+  {
+    id: 5,
+    name: "Linux",
+    desc: "Shell scripting, system administration, process management",
+    icon: "🐧",
+    size: "normal",
+    color: "#fcc624",
+  },
+  {
+    id: 6,
+    name: "Bootstrap",
+    desc: "Responsive UI frameworks",
+    icon: "🎨",
+    size: "normal",
+    color: "#7952b3",
+  },
+  {
+    id: 7,
+    name: "GitHub",
+    desc: "Version control, PRs, CI/CD workflows and branch strategies",
+    icon: "🔀",
+    size: "wide",
+    color: "#f05032",
+  },
+  {
+    id: 8,
+    name: "VS Code",
+    desc: "Dev environment mastery",
+    icon: "💻",
+    size: "normal",
+    color: "#007acc",
+  },
+  {
+    id: 9,
+    name: "Cloud Fundamentals",
+    desc: "AWS, GCP — compute, storage, networking, IAM",
+    icon: "☁️",
+    size: "wide",
+    color: "#ff9900",
+  },
+  {
+    id: 10,
+    name: "React",
+    desc: "Component-based UI development",
+    icon: "⚛",
+    size: "wide",
+    color: "#61DAFB",
+  },
+  {
+    id: 11,
+    name: "TailwindCSS",
+    desc: "Utility-first styling & responsive design",
+    icon: "🎨",
+    size: "wide",
+    color: "#38BDF8",
+  },
+  {
+    id: 12,
+    name: "Node.js",
+    desc: "Server-side JavaScript & tooling",
+    icon: "🟢",
+    size: "normal",
+    color: "#68A063",
+  },
+  {
+    id: 13,
+    name: "NestJS",
+    desc: "Scalable backend architecture",
+    icon: "🦉",
+    size: "normal",
+    color: "#E0234D",
+  },
+  {
+    id: 14,
+    name: "MySQL",
+    desc: "Relational databases & query optimization",
+    icon: "🐬",
+    size: "normal",
+    color: "#00758F",
+  },
+  {
+    id: 15,
+    name: "GitHub Actions",
+    desc: "Automated CI/CD workflows",
+    icon: "⚙️",
+    size: "wide",
+    color: "#2088FF",
+  },
+  {
+    id: 16,
+    name: "cPanel",
+    desc: "Web hosting management & deployment",
+    icon: "🛠️",
+    size: "normal",
+    color: "#FF6D00",
+  },
+  {
+    id: 17,
+    name: "Figma",
+    desc: "UI design & prototyping",
+    icon: "✏️",
+    size: "normal",
+    color: "#F24E1E",
+  },
+  {
+    id: 18,
+    name: "Cursor",
+    desc: "AI-assisted coding workflow",
+    icon: "⌨️",
+    size: "normal",
+    color: "#00C2FF",
+  },
+];
+
+function SkillCard({
+  skill,
+  delay,
+  inView,
+}: {
+  skill: (typeof skills)[0];
+  delay: number;
+  inView: boolean;
+}) {
+  const [hov, setHov] = useState(false);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.55, delay, ease: [0.16, 1, 0.3, 1] }}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        gridColumn: skill.size === "wide" ? "span 2" : "span 1",
+        padding: "24px",
+        borderRadius: "20px",
+        background: hov ? "rgba(79,142,247,0.07)" : "rgba(255,255,255,0.04)",
+        border: `1px solid ${hov ? "rgba(79,142,247,0.25)" : "rgba(255,255,255,0.07)"}`,
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
+        cursor: "default",
+        transition: "background 200ms ease, border-color 200ms ease",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      {/* Shimmer sweep on hover */}
+      {hov && (
+        <motion.div
+          initial={{ x: "-100%" }}
+          animate={{ x: "200%" }}
+          transition={{ duration: 0.7, ease: "easeInOut" }}
+          style={{
+            position: "absolute",
+            inset: 0,
+            background:
+              "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.06) 50%, transparent 70%)",
+            pointerEvents: "none",
+          }}
+        />
+      )}
+
+      {/* Icon */}
+      <motion.div
+        animate={hov ? { scale: 1.15, rotate: 8 } : { scale: 1, rotate: 0 }}
+        transition={{ duration: 0.25, ease: "easeOut" }}
+        style={{
+          width: 48,
+          height: 48,
+          borderRadius: "14px",
+          background: `${skill.color}18`,
+          border: `1px solid ${skill.color}30`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: "24px",
+          marginBottom: "14px",
+        }}
+      >
+        {skill.icon}
+      </motion.div>
+
+      <div
+        style={{
+          fontFamily: "'Plus Jakarta Sans', sans-serif",
+          fontSize: "16px",
+          fontWeight: 700,
+          color: hov ? "#fff" : "rgba(255,255,255,0.9)",
+          marginBottom: "6px",
+          transition: "color 200ms ease",
+        }}
+      >
+        {skill.name}
+      </div>
+      <p
+        style={{
+          fontFamily: "'Inter', sans-serif",
+          fontSize: "13px",
+          lineHeight: 1.6,
+          color: "rgba(255,255,255,0.4)",
+          margin: 0,
+        }}
+      >
+        {skill.desc}
+      </p>
+    </motion.div>
+  );
+}
+
+export function KaviSkills() {
+  const ref = useRef<HTMLElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
+
+  return (
+    <section
+      id="skills"
+      ref={ref}
+      style={{ padding: "120px 24px", background: "rgba(14,14,28,0.5)" }}
+    >
+      <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
+        <SectionLabel label="Capabilities" delay={0} inView={inView} />
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-end",
+            flexWrap: "wrap",
+            gap: "16px",
+            margin: "20px 0 48px 0",
+          }}
+        >
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            animate={inView ? { opacity: 1, y: 0 } : {}}
+            transition={{ delay: 0.15, duration: 0.6 }}
+            style={{
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
+              fontSize: "clamp(28px, 4vw, 48px)",
+              fontWeight: 800,
+              color: "#fff",
+              letterSpacing: "-0.03em",
+              margin: 0,
+            }}
+          >
+            Tools & Technologies
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={inView ? { opacity: 1 } : {}}
+            transition={{ delay: 0.3 }}
+            style={{
+              fontFamily: "'Inter', sans-serif",
+              fontSize: "14px",
+              color: "rgba(255,255,255,0.35)",
+              margin: 0,
+            }}
+          >
+            {skills.length} skills
+          </motion.p>
+        </div>
+
+        {/* Bento grid */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(4, 1fr)",
+            gap: "14px",
+          }}
+          className="skills-bento-grid"
+        >
+          {skills.map((skill, i) => (
+            <SkillCard
+              key={skill.id}
+              skill={skill}
+              delay={0.1 + i * 0.06}
+              inView={inView}
+            />
+          ))}
+        </div>
+      </div>
+
+      <style>{`
+        @media (max-width: 1024px) {
+          .skills-bento-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+        }
+        @media (max-width: 768px) {
+          #skills {
+            padding: 80px 24px !important;
+          }
+        }
+        @media (max-width: 480px) {
+          #skills {
+            padding: 64px 16px !important;
+          }
+          .skills-bento-grid {
+            grid-template-columns: 1fr !important;
+            gap: 10px !important;
+          }
+          .skills-bento-grid > div {
+            grid-column: span 1 !important;
+          }
+        }
+      `}</style>
+    </section>
+  );
+}
