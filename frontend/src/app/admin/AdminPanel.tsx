@@ -11,6 +11,7 @@ import {
   type ProjectItem,
   type SkillItem,
 } from "../data/portfolioData";
+import { SkillIcon } from "../components/skillIcons";
 
 function readAsBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -289,7 +290,26 @@ function SkillsPage() {
       <div style={{ display: "grid", gap: 10 }}>
         {data.skills.map((s, idx) => (
           <div key={s.id} style={{ ...sectionCardStyle(), padding: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div>{s.icon} {s.name} · <span style={{ color: "rgba(255,255,255,0.5)" }}>{s.category}</span></div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 8,
+                  background: `${s.color}22`,
+                  border: `1px solid ${s.color}44`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <SkillIcon id={s.id} name={s.name} icon={s.icon} color={s.color} size={20} />
+              </span>
+              <span>
+                {s.name} · <span style={{ color: "rgba(255,255,255,0.5)" }}>{s.category}</span>
+              </span>
+            </div>
             <div style={{ display: "flex", gap: 6 }}>
               <button onClick={() => idx > 0 && save({ ...data, skills: data.skills.map((x, i, arr) => (i === idx - 1 ? arr[idx] : i === idx ? arr[idx - 1] : x)) }, `Reordered skill ${s.name}`)}>↑</button>
               <button onClick={() => idx < data.skills.length - 1 && save({ ...data, skills: data.skills.map((x, i, arr) => (i === idx + 1 ? arr[idx] : i === idx ? arr[idx + 1] : x)) }, `Reordered skill ${s.name}`)}>↓</button>
@@ -496,7 +516,7 @@ function SkillModal({ item, onClose, onSave }: { item: SkillItem; onClose: () =>
   return (
     <BaseModal onClose={onClose}>
       <input value={state.name} onChange={(e) => setState({ ...state, name: e.target.value })} placeholder="Skill Name" style={{ width: "100%", marginBottom: 8 }} />
-      <input value={state.icon} onChange={(e) => setState({ ...state, icon: e.target.value })} placeholder="Icon emoji or URL" style={{ width: "100%", marginBottom: 8 }} />
+      <input value={state.icon} onChange={(e) => setState({ ...state, icon: e.target.value })} placeholder="Optional: emoji or image URL (known tools use logos from name/ID)" style={{ width: "100%", marginBottom: 8 }} />
       <select value={state.category} onChange={(e) => setState({ ...state, category: e.target.value as SkillItem["category"] })} style={{ width: "100%", marginBottom: 8 }}>
         <option>Frontend</option><option>Backend</option><option>DevOps</option><option>Tools</option>
       </select>

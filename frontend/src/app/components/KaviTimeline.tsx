@@ -33,6 +33,7 @@ function TimelineCard({
   const accentBg = isExperience ? "rgba(79,142,247,0.1)" : "rgba(124,58,237,0.1)";
   const accentBorder = isExperience ? "rgba(79,142,247,0.2)" : "rgba(124,58,237,0.2)";
   const isCurrent = Boolean(entry.isCurrent);
+  const isCurrentExperience = isCurrent && isExperience;
 
   return (
     <div
@@ -47,6 +48,25 @@ function TimelineCard({
       }}
       className="timeline-card-wrapper"
     >
+      {/* Center-line node (desktop) */}
+      <div
+        className="timeline-node"
+        style={{
+          position: "absolute",
+          left: "50%",
+          top: "28px",
+          width: 14,
+          height: 14,
+          borderRadius: "50%",
+          background: accentColor,
+          border: "2px solid rgba(15,15,20,0.95)",
+          boxShadow: `0 0 14px ${isExperience ? "rgba(79,142,247,0.55)" : "rgba(124,58,237,0.55)"}`,
+          transform: "translateX(-50%)",
+          zIndex: 2,
+          pointerEvents: "none",
+        }}
+        aria-hidden
+      />
       <motion.div
         initial={{ opacity: 0, x: isLeft ? -50 : 50, y: 10 }}
         animate={inView ? { opacity: 1, x: 0, y: 0 } : {}}
@@ -63,20 +83,25 @@ function TimelineCard({
           background: "rgba(255,255,255,0.04)",
           backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",
-          border: isCurrent ? "1px solid rgba(34,197,94,0.35)" : "1px solid rgba(255,255,255,0.08)",
-          boxShadow: isCurrent
-            ? "0 0 40px rgba(34,197,94,0.12), 0 4px 24px rgba(0,0,0,0.2)"
+          border: isCurrentExperience
+            ? "1px solid rgba(34,197,94,0.5)"
+            : "1px solid rgba(255,255,255,0.08)",
+          boxShadow: isCurrentExperience
+            ? "0 0 0 1px rgba(34,197,94,0.2), 0 0 48px rgba(34,197,94,0.22), 0 4px 24px rgba(0,0,0,0.2)"
             : "0 4px 24px rgba(0,0,0,0.2)",
-          transition: "background 200ms ease, border-color 200ms ease",
+          transition: "background 200ms ease, border-color 200ms ease, box-shadow 200ms ease",
           cursor: "default",
         }}
         whileHover={{
-          background: isCurrent
+          background: isCurrentExperience
             ? "rgba(34,197,94,0.10)"
             : isExperience
               ? "rgba(79,142,247,0.06)"
               : "rgba(124,58,237,0.06)",
-          borderColor: isCurrent ? "rgba(34,197,94,0.35)" : accentBorder,
+          borderColor: isCurrentExperience ? "rgba(34,197,94,0.55)" : accentBorder,
+          boxShadow: isCurrentExperience
+            ? "0 0 0 1px rgba(34,197,94,0.25), 0 0 52px rgba(34,197,94,0.28), 0 4px 24px rgba(0,0,0,0.2)"
+            : undefined,
         }}
       >
         {/* Header */}
@@ -131,7 +156,7 @@ function TimelineCard({
             </div>
           </div>
           {/* Date badge */}
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0, flexWrap: "wrap", justifyContent: "flex-end" }}>
             {isCurrent ? (
               <>
                 <div
@@ -147,24 +172,26 @@ function TimelineCard({
                     whiteSpace: "nowrap",
                   }}
                 >
-                  {entry.startDate}
+                  {isCurrentExperience ? entry.startDate : entry.dates}
                 </div>
-                <div
-                  style={{
-                    padding: "4px 10px",
-                    borderRadius: "100px",
-                    background: "rgba(34,197,94,0.12)",
-                    border: "1px solid rgba(34,197,94,0.35)",
-                    fontFamily: "'Inter', sans-serif",
-                    fontSize: "11px",
-                    fontWeight: 600,
-                    color: "#22C55E",
-                    whiteSpace: "nowrap",
-                    boxShadow: "0 0 18px rgba(34,197,94,0.25)",
-                  }}
-                >
-                  Present
-                </div>
+                {isCurrentExperience && (
+                  <div
+                    style={{
+                      padding: "4px 10px",
+                      borderRadius: "100px",
+                      background: "rgba(34,197,94,0.12)",
+                      border: "1px solid rgba(34,197,94,0.35)",
+                      fontFamily: "'Inter', sans-serif",
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      color: "#22C55E",
+                      whiteSpace: "nowrap",
+                      boxShadow: "0 0 18px rgba(34,197,94,0.25)",
+                    }}
+                  >
+                    Present
+                  </div>
+                )}
               </>
             ) : (
               <div
@@ -352,6 +379,7 @@ export function KaviTimeline() {
       <style>{`
         @media (max-width: 768px) {
           .timeline-line { display: none !important; }
+          .timeline-node { display: none !important; }
           .timeline-card-wrapper {
             padding-left: 0 !important;
             padding-right: 0 !important;

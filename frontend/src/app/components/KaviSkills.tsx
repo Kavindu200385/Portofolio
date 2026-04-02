@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { motion, useInView } from "motion/react";
 import { SectionLabel } from "./KaviAbout";
 import { usePortfolioData } from "../data/portfolioData";
+import { SkillIcon } from "./skillIcons";
 
 function SkillCard({
   skill,
@@ -64,11 +65,10 @@ function SkillCard({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          fontSize: "24px",
           marginBottom: "14px",
         }}
       >
-        {skill.icon}
+        <SkillIcon id={skill.id} name={skill.name} icon={skill.icon} color={skill.color} size={28} />
       </motion.div>
 
       <div
