@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { motion, useInView } from "motion/react";
 import { SectionLabel } from "./KaviAbout";
+import { usePortfolioData } from "../data/portfolioData";
 
 type TimelineType = "experience" | "education";
 
@@ -16,59 +17,6 @@ type TimelineEntry = {
   isCurrent?: boolean;
   description: string;
 };
-
-// EXPERIENCE data (newest first)
-const experienceEntries: TimelineEntry[] = [
-  {
-    id: 1,
-    type: "experience",
-    org: "Toyota Lanka",
-    role: "Software Engineering Intern",
-    startDate: "October 2025",
-    isCurrent: true,
-    icon: "💼",
-    side: "left",
-    description:
-      "Working as a Software Engineering Intern contributing to full stack development and DevOps practices. Building and maintaining real-world applications, containerizing services, and supporting CI/CD pipeline workflows in a professional engineering environment.",
-  },
-  {
-    id: 2,
-    type: "experience",
-    org: "Toyota Lanka — VCMS (AutoStream)",
-    role: "Sales Intern",
-    dates: "June 2025 - October 2025",
-    icon: "🤝",
-    side: "right",
-    description:
-      "Acted as the key connection between car dealerships and individual car sale owners, onboarding them onto the AutoStream platform. Managed the end-to-end process of collecting vehicle details and publishing listings on AutoStream. Built and maintained relationships with clients to ensure smooth ad uploads and platform engagement.",
-  },
-  {
-    id: 3,
-    type: "experience",
-    org: "Cargills Food City - Hanwella",
-    role: "Part-Time Worker",
-    dates: "August 2024 - December 2024",
-    icon: "🏪",
-    side: "left",
-    description:
-      "Assisted customers with purchases and inquiries, maintained store organization, and supported inventory tasks. Worked with team members to meet sales goals and ensure efficient daily operations in a fast-paced retail environment.",
-  },
-];
-
-// EDUCATION data
-const educationEntries: TimelineEntry[] = [
-  {
-    id: 4,
-    type: "education",
-    org: "University of Plymouth via NSBM Green University, Sri Lanka",
-    role: "BSc (Hons) Computer Science",
-    dates: "October 2023 - Present",
-    icon: "🎓",
-    side: "right",
-    description:
-      "Final year student under the transnational education partnership with the University of Plymouth, UK. Coursework and assessments are conducted at NSBM Green University, aligned with UK academic standards.",
-  },
-];
 
 function TimelineCard({
   entry,
@@ -257,6 +205,33 @@ function TimelineCard({
 export function KaviTimeline() {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
+  const { data } = usePortfolioData();
+
+  const experienceEntries: TimelineEntry[] = data.experiences.map((item) => ({
+    id: Number(item.id.replace(/\D/g, "")) || Date.now(),
+    type: "experience",
+    org: item.companyName,
+    role: item.role,
+    startDate: item.startDate,
+    dates: item.present ? `${item.startDate} - Present` : `${item.startDate} - ${item.endDate}`,
+    isCurrent: item.present,
+    icon: item.logo || "💼",
+    side: item.side,
+    description: item.description,
+  }));
+
+  const educationEntries: TimelineEntry[] = data.education.map((item) => ({
+    id: Number(item.id.replace(/\D/g, "")) || Date.now(),
+    type: "education",
+    org: item.institutionName,
+    role: item.degree,
+    startDate: item.startDate,
+    dates: item.present ? `${item.startDate} - Present` : `${item.startDate} - ${item.endDate}`,
+    isCurrent: item.present,
+    icon: item.logo || "🎓",
+    side: item.side,
+    description: item.description,
+  }));
 
   return (
     <section

@@ -1,10 +1,7 @@
 import { useEffect, useRef } from "react";
 import { motion } from "motion/react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
-
-const HEADING = "Aspiring Cloud &\nDevOps Engineer";
-const PROFILE_IMG =
-  "/profile.png";
+import { usePortfolioData } from "../data/portfolioData";
 
 function HeroChar({ char, delay }: { char: string; delay: number }) {
   return (
@@ -79,6 +76,17 @@ function AuroraBlob({
 }
 
 export function KaviHero() {
+  const { data } = usePortfolioData();
+  const HEADING = data.hero.heading;
+  const PROFILE_IMG = data.hero.heroPhoto;
+  const cta1IsAnchor = data.hero.cta1Link.startsWith("#");
+  const cta1Click = () => {
+    if (!cta1IsAnchor) {
+      window.location.href = data.hero.cta1Link;
+      return;
+    }
+    document.getElementById(data.hero.cta1Link.replace("#", ""))?.scrollIntoView({ behavior: "smooth" });
+  };
   return (
     <section
       id="intro"
@@ -225,7 +233,7 @@ export function KaviHero() {
               margin: "0 0 40px 0",
             }}
           >
-            Based in Sri Lanka. Building scalable, intelligent systems for the cloud.
+            {data.hero.subHeading}
           </motion.p>
 
           <motion.div
@@ -236,14 +244,12 @@ export function KaviHero() {
             style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}
           >
             <GradientButton
-              onClick={() =>
-                document.getElementById("works")?.scrollIntoView({ behavior: "smooth" })
-              }
+              onClick={cta1Click}
               filled
             >
-              View Works
+              {data.hero.cta1Label}
             </GradientButton>
-            <OutlineButton href="/cv.pdf">Download CV</OutlineButton>
+            <OutlineButton href={data.hero.cta2Link}>{data.hero.cta2Label}</OutlineButton>
           </motion.div>
 
           {/* Stats */}

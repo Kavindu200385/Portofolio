@@ -1,4 +1,5 @@
 import "../styles/fonts.css";
+import { Navigate, Route, Routes } from "react-router";
 import { KaviCursor } from "./components/KaviCursor";
 import { KaviNavbar } from "./components/KaviNavbar";
 import { KaviHero, HeroResponsiveStyles } from "./components/KaviHero";
@@ -8,8 +9,9 @@ import { KaviSkills } from "./components/KaviSkills";
 import { KaviWorks } from "./components/KaviWorks";
 import { KaviContact } from "./components/KaviContact";
 import { KaviFooter } from "./components/KaviFooter";
+import { AdminRoutes, DevAdminFloatingButton } from "./admin/AdminPanel";
 
-export default function App() {
+function PortfolioPage() {
   return (
     <>
       <style>{`
@@ -148,6 +150,17 @@ export default function App() {
       </main>
 
       <KaviFooter />
+      <DevAdminFloatingButton />
     </>
+  );
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<PortfolioPage />} />
+      <Route path="/admin/*" element={<AdminRoutes />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }

@@ -1,9 +1,7 @@
 import { useRef, useState } from "react";
 import { motion, useInView } from "motion/react";
 import { SectionLabel } from "./KaviAbout";
-
-const EMAIL = "kavindu@kavicode.dev";
-const PHONE = "+94 74 225 6408";
+import { usePortfolioData } from "../data/portfolioData";
 
 function OrbBlob({
   color,
@@ -94,6 +92,9 @@ export function KaviContact() {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
   const [emailCopied, setEmailCopied] = useState(false);
+  const { data } = usePortfolioData();
+  const EMAIL = data.contact.email;
+  const PHONE = data.contact.phone;
 
   const copyEmail = async () => {
     try {
@@ -170,17 +171,7 @@ export function KaviContact() {
             margin: "0 0 24px 0",
           }}
         >
-          Get{" "}
-          <span
-            style={{
-              background: "linear-gradient(135deg, #4F8EF7, #7C3AED)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}
-          >
-            In Touch
-          </span>
+          {data.contact.heading}
         </motion.h2>
 
         <motion.p
@@ -196,8 +187,7 @@ export function KaviContact() {
             margin: "0 auto 52px",
           }}
         >
-          I'm actively looking for opportunities in Cloud infrastructure and DevOps engineering.
-          Whether it's a full-time role, internship, or an interesting project — I'd love to connect.
+          {data.contact.description}
         </motion.p>
 
         {/* Email link */}
@@ -316,19 +306,19 @@ export function KaviContact() {
           <SocialBtn
             label="WhatsApp"
             icon="💬"
-            href="https://wa.me/94742256408"
+            href={data.contact.whatsapp}
             color="#25d366"
           />
           <SocialBtn
             label="LinkedIn"
             icon="🔗"
-            href="https://linkedin.com/in/kavindu-sandaruwan"
+            href={data.contact.linkedin}
             color="#0077b5"
           />
           <SocialBtn
             label="GitHub"
             icon="🐙"
-            href="https://github.com/kavisandaruwan"
+            href={data.contact.github}
             color="#7C3AED"
           />
         </motion.div>

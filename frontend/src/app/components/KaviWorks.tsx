@@ -2,93 +2,7 @@ import { useRef, useState } from "react";
 import { motion, useInView } from "motion/react";
 import { SectionLabel } from "./KaviAbout";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
-
-const projects = [
-  {
-    id: 1,
-    title: "FindWORK WebApp",
-    type: "Group",
-    badge: "Group Project",
-    description:
-      "A full-stack job discovery platform connecting job seekers with employers. Features real-time filtering, user authentication, and a responsive dashboard for managing applications.",
-    stack: ["React", "Node.js", "MongoDB", "Tailwind"],
-    image:
-      "https://images.unsplash.com/photo-1767449356630-c60094b1d1b4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800",
-    link: "#",
-  },
-  {
-    id: 2,
-    title: "KaviCode Portfolio",
-    type: "Individual",
-    badge: "Personal",
-    description:
-      "A modern developer portfolio built with Next.js 14 App Router, Framer Motion, and Tailwind CSS. Showcases projects, skills, and experience with cinematic transitions.",
-    stack: ["Next.js", "TypeScript", "Framer Motion"],
-    image:
-      "https://images.unsplash.com/photo-1720962158883-b0f2021fb51e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800",
-    link: "#",
-  },
-  {
-    id: 3,
-    title: "Vehicle Parts Inventory",
-    type: "Individual",
-    badge: "Individual",
-    description:
-      "A desktop inventory management system for an automotive parts retailer. Handles stock tracking, supplier management, and auto-generates purchase orders on low stock.",
-    stack: ["Python", "SQLite", "Tkinter"],
-    image:
-      "https://images.unsplash.com/photo-1584472666879-7d92db132958?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800",
-    link: "#",
-  },
-  {
-    id: 4,
-    title: "Travel Agency Website",
-    type: "Group",
-    badge: "Group Project",
-    description:
-      "A fully responsive travel booking website for a Sri Lankan tourism company. Includes tour packages, itinerary builder, and an inquiry form with email integration.",
-    stack: ["HTML", "CSS", "Bootstrap", "PHP"],
-    image:
-      "https://images.unsplash.com/photo-1645839451285-6010ab4a47d6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800",
-    link: "#",
-  },
-  {
-    id: 5,
-    title: "FindWORK Mobile App",
-    type: "Group",
-    badge: "Group Project",
-    description:
-      "The mobile companion to FindWORK. Built with React Native, it enables push notifications for application updates, biometric login, and offline job browsing.",
-    stack: ["React Native", "Expo", "Firebase"],
-    image:
-      "https://images.unsplash.com/photo-1767449356630-c60094b1d1b4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800",
-    link: "#",
-  },
-  {
-    id: 6,
-    title: "AI in Healthcare",
-    type: "Research",
-    badge: "Research",
-    description:
-      "A research paper and prototype exploring the application of machine learning models in early disease detection from patient data, with a focus on ethical AI deployment.",
-    stack: ["Python", "TensorFlow", "Pandas"],
-    image:
-      "https://images.unsplash.com/photo-1674027215032-f0c4292318ee?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800",
-    link: "#",
-  },
-  {
-    id: 7,
-    title: "Tech-Heaven System",
-    type: "Individual",
-    badge: "Individual",
-    description:
-      "A point-of-sale and inventory system for a tech retail store. Supports barcode scanning, multi-category stock management, and daily sales reporting with PDF export.",
-    stack: ["Java", "MySQL", "JavaFX"],
-    image:
-      "https://images.unsplash.com/photo-1766426497505-681b56759e14?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800",
-    link: "#",
-  },
-];
+import { usePortfolioData } from "../data/portfolioData";
 
 const BADGE_COLORS: Record<string, string> = {
   Group: "#4F8EF7",
@@ -102,7 +16,17 @@ function ProjectCard({
   index,
   inView,
 }: {
-  project: (typeof projects)[0];
+  project: {
+    id: string;
+    name: string;
+    type: string;
+    shortDescription: string;
+    longDescription: string;
+    thumbnail: string;
+    githubLink: string;
+    liveDemoLink: string;
+    techStack: string[];
+  };
   index: number;
   inView: boolean;
 }) {
@@ -157,8 +81,8 @@ function ProjectCard({
       {/* Image */}
       <div style={{ position: "relative", height: "200px", overflow: "hidden" }}>
         <ImageWithFallback
-          src={project.image}
-          alt={project.title}
+          src={project.thumbnail}
+          alt={project.name}
           style={{
             width: "100%",
             height: "100%",
@@ -194,7 +118,7 @@ function ProjectCard({
             textTransform: "uppercase" as const,
           }}
         >
-          {project.badge}
+          {project.type}
         </div>
       </div>
 
@@ -210,7 +134,7 @@ function ProjectCard({
             letterSpacing: "-0.02em",
           }}
         >
-          {project.title}
+          {project.name}
         </div>
         <p
           style={{
@@ -221,14 +145,14 @@ function ProjectCard({
             margin: "0 0 16px 0",
           }}
         >
-          {project.description}
+          {project.shortDescription || project.longDescription}
         </p>
 
         {/* Stack tags */}
         <div
           style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "20px" }}
         >
-          {project.stack.map((s) => (
+          {project.techStack.map((s) => (
             <span
               key={s}
               style={{
@@ -254,7 +178,7 @@ function ProjectCard({
           transition={{ duration: 0.2 }}
         >
           <a
-            href={project.link}
+            href={project.liveDemoLink || project.githubLink || "#"}
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -282,6 +206,8 @@ function ProjectCard({
 export function KaviWorks() {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
+  const { data } = usePortfolioData();
+  const projects = data.projects;
 
   return (
     <section

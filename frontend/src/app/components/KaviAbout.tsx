@@ -1,27 +1,15 @@
 import { useRef } from "react";
 import { motion, useInView } from "motion/react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
-
-const PROFILE_IMG =
-  "/profile.png";
-
-const bioLines = [
-  "I'm Kavindu Sandaruwan, a final-year Computer Science student at the University of Plymouth via NSBM Green University, Sri Lanka - and a Software Engineering Intern at Toyota Lanka.",
-  "My passion lives at the intersection of Full Stack development and DevOps engineering. Day to day, I'm building and shipping real-world applications, containerizing services, and designing reliable CI/CD pipelines in a professional environment.",
-  "I'm continuously sharpening my skills across the full stack - from crafting clean, responsive frontends to architecting scalable backends and cloud-native infrastructure.",
-  "Every project is a step toward building systems that are fast, resilient, and built to last.",
-];
-
-const tags = [
-  { icon: "🔍", label: "Research" },
-  { icon: "🤖", label: "AI" },
-  { icon: "☁️", label: "Cloud" },
-  { icon: "🧩", label: "Full Stack" },
-];
+import { usePortfolioData } from "../data/portfolioData";
 
 export function KaviAbout() {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-100px" });
+  const { data } = usePortfolioData();
+  const PROFILE_IMG = data.about.profilePhoto;
+  const bioLines = data.about.paragraphs;
+  const tags = data.about.badges;
 
   return (
     <section

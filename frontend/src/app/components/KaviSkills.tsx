@@ -1,160 +1,14 @@
 import { useRef, useState } from "react";
 import { motion, useInView } from "motion/react";
 import { SectionLabel } from "./KaviAbout";
-
-const skills = [
-  {
-    id: 1,
-    name: "HTML & CSS",
-    desc: "Semantic markup and modern CSS layouts",
-    icon: "🌐",
-    size: "normal",
-    color: "#e34c26",
-  },
-  {
-    id: 2,
-    name: "JavaScript",
-    desc: "ES2022+, async patterns, DOM manipulation",
-    icon: "⚡",
-    size: "wide",
-    color: "#f7df1e",
-  },
-  {
-    id: 3,
-    name: "Docker",
-    desc: "Containerization, compose, multi-stage builds, networking",
-    icon: "🐳",
-    size: "wide",
-    color: "#2496ed",
-  },
-  {
-    id: 4,
-    name: "Python",
-    desc: "Scripting, automation & ML",
-    icon: "🐍",
-    size: "normal",
-    color: "#3572a5",
-  },
-  {
-    id: 5,
-    name: "Linux",
-    desc: "Shell scripting, system administration, process management",
-    icon: "🐧",
-    size: "normal",
-    color: "#fcc624",
-  },
-  {
-    id: 6,
-    name: "Bootstrap",
-    desc: "Responsive UI frameworks",
-    icon: "🎨",
-    size: "normal",
-    color: "#7952b3",
-  },
-  {
-    id: 7,
-    name: "GitHub",
-    desc: "Version control, PRs, CI/CD workflows and branch strategies",
-    icon: "🔀",
-    size: "wide",
-    color: "#f05032",
-  },
-  {
-    id: 8,
-    name: "VS Code",
-    desc: "Dev environment mastery",
-    icon: "💻",
-    size: "normal",
-    color: "#007acc",
-  },
-  {
-    id: 9,
-    name: "Cloud Fundamentals",
-    desc: "AWS, GCP — compute, storage, networking, IAM",
-    icon: "☁️",
-    size: "wide",
-    color: "#ff9900",
-  },
-  {
-    id: 10,
-    name: "React",
-    desc: "Component-based UI development",
-    icon: "⚛",
-    size: "wide",
-    color: "#61DAFB",
-  },
-  {
-    id: 11,
-    name: "TailwindCSS",
-    desc: "Utility-first styling & responsive design",
-    icon: "🎨",
-    size: "wide",
-    color: "#38BDF8",
-  },
-  {
-    id: 12,
-    name: "Node.js",
-    desc: "Server-side JavaScript & tooling",
-    icon: "🟢",
-    size: "normal",
-    color: "#68A063",
-  },
-  {
-    id: 13,
-    name: "NestJS",
-    desc: "Scalable backend architecture",
-    icon: "🦉",
-    size: "normal",
-    color: "#E0234D",
-  },
-  {
-    id: 14,
-    name: "MySQL",
-    desc: "Relational databases & query optimization",
-    icon: "🐬",
-    size: "normal",
-    color: "#00758F",
-  },
-  {
-    id: 15,
-    name: "GitHub Actions",
-    desc: "Automated CI/CD workflows",
-    icon: "⚙️",
-    size: "wide",
-    color: "#2088FF",
-  },
-  {
-    id: 16,
-    name: "cPanel",
-    desc: "Web hosting management & deployment",
-    icon: "🛠️",
-    size: "normal",
-    color: "#FF6D00",
-  },
-  {
-    id: 17,
-    name: "Figma",
-    desc: "UI design & prototyping",
-    icon: "✏️",
-    size: "normal",
-    color: "#F24E1E",
-  },
-  {
-    id: 18,
-    name: "Cursor",
-    desc: "AI-assisted coding workflow",
-    icon: "⌨️",
-    size: "normal",
-    color: "#00C2FF",
-  },
-];
+import { usePortfolioData } from "../data/portfolioData";
 
 function SkillCard({
   skill,
   delay,
   inView,
 }: {
-  skill: (typeof skills)[0];
+  skill: { id: string; name: string; shortDescription: string; icon: string; size: "normal" | "wide"; color: string };
   delay: number;
   inView: boolean;
 }) {
@@ -238,7 +92,7 @@ function SkillCard({
           margin: 0,
         }}
       >
-        {skill.desc}
+        {skill.shortDescription}
       </p>
     </motion.div>
   );
@@ -247,6 +101,8 @@ function SkillCard({
 export function KaviSkills() {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
+  const { data } = usePortfolioData();
+  const skills = data.skills;
 
   return (
     <section
