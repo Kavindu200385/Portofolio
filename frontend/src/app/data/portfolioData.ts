@@ -357,10 +357,10 @@ export const defaultPortfolioData: PortfolioData = {
     heroPhoto: "/profile.png",
   },
   contact: {
-    email: "kavindu@kavicode.dev",
+    email: "kavindu2003sandaruwan@gmail.com",
     whatsapp: "https://wa.me/94742256408",
-    linkedin: "https://linkedin.com/in/kavindu-sandaruwan",
-    github: "https://github.com/kavisandaruwan",
+    linkedin: "https://www.linkedin.com/in/kavindu-sandaruwan-54354128a/",
+    github: "https://github.com/Kavindu200385",
     phone: "+94 74 225 6408",
     heading: "Get In Touch",
     description:
