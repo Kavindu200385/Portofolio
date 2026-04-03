@@ -207,7 +207,11 @@ export function KaviWorks() {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
   const { data } = usePortfolioData();
-  const projects = data.projects;
+  const projects = [
+    // Featured projects first, then the rest, while preserving relative order
+    ...data.projects.filter((p) => p.featured),
+    ...data.projects.filter((p) => !p.featured),
+  ];
 
   return (
     <section

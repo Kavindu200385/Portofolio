@@ -95,7 +95,16 @@ function AdminLayout() {
     return () => window.removeEventListener(TOAST_EVENT, handler);
   }, []);
   return (
-    <div style={{ minHeight: "100vh", background: "#080810", color: "#fff", padding: 20 }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#080810",
+        color: "#fff",
+        padding: 20,
+        cursor: "auto",
+      }}
+      className="admin-root"
+    >
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
         <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
           <div className="admin-sidebar"><Sidebar /></div>
@@ -139,6 +148,13 @@ function AdminLayout() {
         </div>
       ) : null}
       <style>{`
+        .admin-root * {
+          cursor: auto !important;
+        }
+        .admin-root a,
+        .admin-root button {
+          cursor: pointer !important;
+        }
         @media (max-width: 980px) {
           .admin-sidebar { display: none; }
         }
@@ -174,7 +190,31 @@ function LoginPage() {
   if (getAdminToken()) return <Navigate to="/admin" replace />;
 
   return (
-    <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "#080810", color: "#fff" }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "grid",
+        placeItems: "center",
+        background: "#080810",
+        color: "#fff",
+        cursor: "auto",
+      }}
+      className="admin-login-root"
+    >
+      <style>{`
+        .admin-login-root * {
+          cursor: auto !important;
+        }
+        .admin-login-root a,
+        .admin-login-root button,
+        .admin-login-root input,
+        .admin-login-root textarea {
+          cursor: text;
+        }
+        .admin-login-root button {
+          cursor: pointer;
+        }
+      `}</style>
       <form onSubmit={submit} style={{ width: 360, padding: 24, ...sectionCardStyle() }}>
         <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800, fontSize: 28, marginBottom: 16 }}>Admin Login</div>
         <input
@@ -246,7 +286,17 @@ function resetButton(onClick: () => void) {
 function ProjectsPage() {
   const { data, save, resetSection, loading } = usePortfolioData();
   const [editing, setEditing] = useState<ProjectItem | null>(null);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
   if (loading) return <Skeleton />;
+
+  const handleReorder = (from: number, to: number) => {
+    if (from === to || from < 0 || to < 0 || from >= data.projects.length || to >= data.projects.length) return;
+    const next = [...data.projects];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    save({ ...data, projects: next }, `Reordered project ${moved.name}`);
+  };
+
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
@@ -254,12 +304,62 @@ function ProjectsPage() {
         {resetButton(() => resetSection("projects"))}
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 12 }}>
-        {data.projects.map((p) => (
-          <div key={p.id} style={{ ...sectionCardStyle(), overflow: "hidden" }}>
+        {data.projects.map((p, index) => (
+          <div
+            key={p.id}
+            draggable
+            onDragStart={() => setDragIndex(index)}
+            onDragOver={(e) => {
+              e.preventDefault();
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              if (dragIndex !== null) {
+                handleReorder(dragIndex, index);
+                setDragIndex(null);
+              }
+            }}
+            style={{ ...sectionCardStyle(), overflow: "hidden", cursor: "grab" }}
+          >
             <img src={p.thumbnail} style={{ width: "100%", height: 120, objectFit: "cover" }} />
             <div style={{ padding: 12 }}>
-              <div style={{ fontWeight: 700 }}>{p.name}</div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>{p.type}</div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                <div style={{ fontWeight: 700 }}>{p.name}</div>
+                {p.featured ? (
+                  <span
+                    style={{
+                      padding: "2px 8px",
+                      borderRadius: 999,
+                      fontSize: 10,
+                      fontFamily: "'Inter', sans-serif",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.08em",
+                      background: "rgba(251,191,36,0.16)",
+                      border: "1px solid rgba(251,191,36,0.55)",
+                      color: "#fbbf24",
+                    }}
+                  >
+                    Featured
+                  </span>
+                ) : null}
+              </div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 6 }}>{p.type}</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 8 }}>
+                {p.techStack.map((t) => (
+                  <span
+                    key={t}
+                    style={{
+                      padding: "2px 8px",
+                      borderRadius: 999,
+                      border: "1px solid rgba(255,255,255,0.14)",
+                      fontSize: 10,
+                      color: "rgba(255,255,255,0.7)",
+                    }}
+                  >
+                    {t}
+                  </span>
+                ))}
+              </div>
               <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
                 <button onClick={() => setEditing(p)} style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.12)", background: "transparent", color: "#fff" }}>Edit</button>
                 <button onClick={() => window.confirm("Delete project?") && save({ ...data, projects: data.projects.filter((x) => x.id !== p.id) }, `Deleted project ${p.name}`)} style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid rgba(248,113,113,0.4)", background: "rgba(248,113,113,0.12)", color: "#fecaca" }}>Delete</button>
@@ -487,27 +587,736 @@ function BaseModal({ children, onClose }: { children: React.ReactNode; onClose: 
 }
 
 function ProjectModal({ item, onClose, onSave }: { item: ProjectItem; onClose: () => void; onSave: (item: ProjectItem) => void }) {
-  const [state, setState] = useState(item);
-  const [stack, setStack] = useState(item.techStack.join(", "));
+  const [state, setState] = useState<ProjectItem>({ ...item, extraImages: item.extraImages ?? [] });
+  const [stackInput, setStackInput] = useState("");
+  const [stack, setStack] = useState<string[]>(item.techStack);
+  const [shortCount, setShortCount] = useState(item.shortDescription?.length ?? 0);
+  const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const addTag = () => {
+    const v = stackInput.trim();
+    if (!v) return;
+    if (!stack.includes(v)) setStack([...stack, v]);
+    setStackInput("");
+  };
+
+  const removeTag = (tag: string) => {
+    setStack(stack.filter((t) => t !== tag));
+  };
+
+  const onStackKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      addTag();
+    }
+  };
+
+  const pickMainPhoto = async (file: File | undefined) => {
+    if (!file) return;
+    const base64 = await readAsBase64(file);
+    setState((prev) => ({ ...prev, thumbnail: base64 }));
+  };
+
+  const pickExtraPhotos = async (files: FileList | null) => {
+    if (!files?.length) return;
+    const arr = Array.from(files);
+    const base64s = await Promise.all(arr.map((f) => readAsBase64(f)));
+    setState((prev) => ({ ...prev, extraImages: [...(prev.extraImages ?? []), ...base64s] }));
+  };
+
+  const removeExtraImage = (idx: number) => {
+    setState((prev) => ({
+      ...prev,
+      extraImages: (prev.extraImages ?? []).filter((_, i) => i !== idx),
+    }));
+  };
+
+  const validate = () => {
+    const nextErrors: Record<string, string> = {};
+    if (!state.name.trim()) nextErrors.name = "Project name is required.";
+    if (!state.type) nextErrors.type = "Category is required.";
+    if (!state.shortDescription.trim()) nextErrors.shortDescription = "Short description is required.";
+    if (shortCount > 150) nextErrors.shortDescription = "Short description must be 150 characters or less.";
+    if (!state.longDescription.trim()) nextErrors.longDescription = "Full description is required.";
+    if (!state.thumbnail) nextErrors.thumbnail = "Main photo is required.";
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const submit = () => {
+    if (!validate()) return;
+    try {
+      setSaving(true);
+      onSave({ ...state, techStack: stack });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const typeOptions: { value: ProjectItem["type"]; label: string; color: string }[] = [
+    { value: "Individual", label: "Individual", color: "#4F8EF7" },
+    { value: "Group", label: "Group", color: "#22c55e" },
+    { value: "Research", label: "Research", color: "#7C3AED" },
+  ];
+
+  const currentType = typeOptions.find((o) => o.value === state.type) ?? typeOptions[0];
+
   return (
-    <BaseModal onClose={onClose}>
-      <input value={state.name} onChange={(e) => setState({ ...state, name: e.target.value })} placeholder="Project Name" style={{ width: "100%", marginBottom: 8 }} />
-      <select value={state.type} onChange={(e) => setState({ ...state, type: e.target.value as ProjectItem["type"] })} style={{ width: "100%", marginBottom: 8 }}>
-        <option>Group</option><option>Individual</option><option>Research</option>
-      </select>
-      <input value={state.shortDescription} onChange={(e) => setState({ ...state, shortDescription: e.target.value })} placeholder="Short Description" style={{ width: "100%", marginBottom: 8 }} />
-      <textarea value={state.longDescription} onChange={(e) => setState({ ...state, longDescription: e.target.value })} placeholder="Long Description" style={{ width: "100%", minHeight: 80, marginBottom: 8 }} />
-      <input value={state.githubLink} onChange={(e) => setState({ ...state, githubLink: e.target.value })} placeholder="GitHub Link" style={{ width: "100%", marginBottom: 8 }} />
-      <input value={state.liveDemoLink} onChange={(e) => setState({ ...state, liveDemoLink: e.target.value })} placeholder="Live Demo Link" style={{ width: "100%", marginBottom: 8 }} />
-      <input value={stack} onChange={(e) => setStack(e.target.value)} placeholder="Tech Stack (comma separated)" style={{ width: "100%", marginBottom: 8 }} />
-      <label style={{ display: "block", marginBottom: 8 }}><input type="checkbox" checked={state.featured} onChange={(e) => setState({ ...state, featured: e.target.checked })} /> Featured</label>
-      <input type="file" accept="image/*" onChange={async (e) => {
-        const f = e.target.files?.[0];
-        if (!f) return;
-        setState({ ...state, thumbnail: await readAsBase64(f) });
-      }} />
-      <button onClick={() => onSave({ ...state, techStack: stack.split(",").map((x) => x.trim()).filter(Boolean) })} style={{ marginTop: 10 }}>Save</button>
-    </BaseModal>
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.65)",
+        display: "flex",
+        justifyContent: "flex-end",
+        zIndex: 1000,
+        padding: 0,
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          width: "min(520px, 100vw)",
+          maxWidth: "100%",
+          height: "100%",
+          background: "linear-gradient(135deg, rgba(15,23,42,0.96), rgba(15,23,42,0.98))",
+          borderLeft: "1px solid rgba(148,163,184,0.35)",
+          boxShadow: "0 0 40px rgba(0,0,0,0.6)",
+          display: "flex",
+          flexDirection: "column",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div
+          style={{
+            padding: "16px 20px",
+            borderBottom: "1px solid rgba(148,163,184,0.25)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <div
+            style={{
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
+              fontWeight: 800,
+              fontSize: 18,
+            }}
+          >
+            {item.id ? "Edit Project" : "Add Project"}
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              borderRadius: 999,
+              border: "1px solid rgba(148,163,184,0.4)",
+              background: "rgba(15,23,42,0.8)",
+              color: "#e5e7eb",
+              width: 28,
+              height: 28,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 14,
+              cursor: "pointer",
+            }}
+          >
+            ×
+          </button>
+        </div>
+
+        {/* Body */}
+        <div
+          style={{
+            flex: 1,
+            overflowY: "auto",
+            padding: "16px 20px 80px",
+          }}
+        >
+          {/* 1. Project Name */}
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ marginBottom: 4, fontSize: 12, fontWeight: 600 }}>
+              <span>Project Name</span>
+              <span style={{ color: "#f97373", marginLeft: 4 }}>*</span>
+            </div>
+            <input
+              value={state.name}
+              onChange={(e) => setState({ ...state, name: e.target.value })}
+              placeholder="Enter project name"
+              style={{
+                width: "100%",
+                padding: "10px 12px",
+                borderRadius: 12,
+                border: `1px solid ${errors.name ? "rgba(248,113,113,0.8)" : "rgba(148,163,184,0.4)"}`,
+                background: "rgba(15,23,42,0.85)",
+                color: "#e5e7eb",
+                fontSize: 13,
+              }}
+            />
+            {errors.name && (
+              <div style={{ marginTop: 4, fontSize: 11, color: "#f87171" }}>{errors.name}</div>
+            )}
+          </div>
+
+          {/* 2. Category */}
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ marginBottom: 4, fontSize: 12, fontWeight: 600 }}>
+              <span>Category</span>
+              <span style={{ color: "#f97373", marginLeft: 4 }}>*</span>
+            </div>
+            <div
+              style={{
+                position: "relative",
+                borderRadius: 12,
+                border: `1px solid ${errors.type ? "rgba(248,113,113,0.8)" : "rgba(148,163,184,0.4)"}`,
+                background: "rgba(15,23,42,0.9)",
+                padding: "4px 10px",
+              }}
+            >
+              <select
+                value={currentType.value}
+                onChange={(e) =>
+                  setState({ ...state, type: e.target.value as ProjectItem["type"] })
+                }
+                style={{
+                  width: "100%",
+                  background: "transparent",
+                  border: "none",
+                  color: "#e5e7eb",
+                  padding: "6px 0 6px 0",
+                  fontSize: 13,
+                  WebkitAppearance: "none",
+                }}
+              >
+                {typeOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value} style={{ color: "#000" }}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {errors.type && (
+              <div style={{ marginTop: 4, fontSize: 11, color: "#f87171" }}>{errors.type}</div>
+            )}
+          </div>
+
+          {/* 3. Short Description */}
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ marginBottom: 4, fontSize: 12, fontWeight: 600 }}>
+              <span>Short Description</span>
+              <span style={{ color: "#f97373", marginLeft: 4 }}>*</span>
+            </div>
+            <div
+              style={{
+                borderRadius: 12,
+                border: `1px solid ${errors.shortDescription ? "rgba(248,113,113,0.8)" : "rgba(148,163,184,0.4)"}`,
+                background: "rgba(15,23,42,0.85)",
+                padding: 8,
+              }}
+            >
+              <textarea
+                value={state.shortDescription}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setState({ ...state, shortDescription: v });
+                  setShortCount(v.length);
+                }}
+                rows={3}
+                placeholder="Brief description shown on project card"
+                style={{
+                  width: "100%",
+                  border: "none",
+                  outline: "none",
+                  resize: "none",
+                  background: "transparent",
+                  color: "#e5e7eb",
+                  fontSize: 13,
+                }}
+              />
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  fontSize: 11,
+                  color: shortCount > 150 ? "#f87171" : "rgba(148,163,184,0.9)",
+                }}
+              >
+                {shortCount}/150
+              </div>
+            </div>
+            {errors.shortDescription && (
+              <div style={{ marginTop: 4, fontSize: 11, color: "#f87171" }}>
+                {errors.shortDescription}
+              </div>
+            )}
+          </div>
+
+          {/* 4. Full Description */}
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ marginBottom: 4, fontSize: 12, fontWeight: 600 }}>
+              <span>Full Description</span>
+              <span style={{ color: "#f97373", marginLeft: 4 }}>*</span>
+            </div>
+            <textarea
+              value={state.longDescription}
+              onChange={(e) => setState({ ...state, longDescription: e.target.value })}
+              rows={6}
+              placeholder="Full detailed description of the project"
+              style={{
+                width: "100%",
+                padding: "10px 12px",
+                borderRadius: 12,
+                border: `1px solid ${errors.longDescription ? "rgba(248,113,113,0.8)" : "rgba(148,163,184,0.4)"}`,
+                background: "rgba(15,23,42,0.85)",
+                color: "#e5e7eb",
+                fontSize: 13,
+                resize: "vertical",
+              }}
+            />
+            {errors.longDescription && (
+              <div style={{ marginTop: 4, fontSize: 11, color: "#f87171" }}>
+                {errors.longDescription}
+              </div>
+            )}
+          </div>
+
+          {/* 5. Main Photo */}
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ marginBottom: 4, fontSize: 12, fontWeight: 600 }}>
+              <span>Main Photo</span>
+              <span style={{ color: "#f97373", marginLeft: 4 }}>*</span>
+            </div>
+            <label
+              style={{
+                display: "block",
+                borderRadius: 16,
+                border: `1px dashed ${errors.thumbnail ? "rgba(248,113,113,0.8)" : "rgba(148,163,184,0.6)"}`,
+                background: "rgba(15,23,42,0.7)",
+                padding: 12,
+                cursor: "pointer",
+              }}
+            >
+              <input
+                type="file"
+                accept="image/*"
+                style={{ display: "none" }}
+                onChange={async (e) => {
+                  const f = e.target.files?.[0];
+                  await pickMainPhoto(f);
+                }}
+              />
+              {state.thumbnail ? (
+                <div>
+                  <img
+                    src={state.thumbnail}
+                    alt=""
+                    style={{
+                      width: "100%",
+                      borderRadius: 12,
+                      objectFit: "cover",
+                      maxHeight: 180,
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={(evt) => {
+                      evt.preventDefault();
+                      evt.stopPropagation();
+                      setState({ ...state, thumbnail: "" });
+                    }}
+                    style={{
+                      marginTop: 8,
+                      padding: "6px 10px",
+                      borderRadius: 999,
+                      border: "1px solid rgba(248,113,113,0.6)",
+                      background: "rgba(248,113,113,0.12)",
+                      color: "#fecaca",
+                      fontSize: 12,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Remove photo
+                  </button>
+                </div>
+              ) : (
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "18px 8px",
+                    gap: 6,
+                  }}
+                >
+                  <div style={{ fontSize: 22 }}>📷</div>
+                  <div style={{ fontSize: 13, color: "#e5e7eb" }}>
+                    Click to upload main photo
+                  </div>
+                  <div style={{ fontSize: 11, color: "rgba(148,163,184,0.9)" }}>
+                    PNG, JPG, WEBP up to 5MB
+                  </div>
+                </div>
+              )}
+            </label>
+            {errors.thumbnail && (
+              <div style={{ marginTop: 4, fontSize: 11, color: "#f87171" }}>
+                {errors.thumbnail}
+              </div>
+            )}
+          </div>
+
+          {/* 6. Additional Photos */}
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ marginBottom: 4, fontSize: 12, fontWeight: 600 }}>
+              <span>Additional Photos</span>
+              <span style={{ color: "rgba(148,163,184,0.9)", marginLeft: 4 }}>(optional)</span>
+            </div>
+            <label
+              style={{
+                display: "block",
+                borderRadius: 16,
+                border: "1px dashed rgba(148,163,184,0.6)",
+                background: "rgba(15,23,42,0.7)",
+                padding: 12,
+                cursor: "pointer",
+              }}
+            >
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                style={{ display: "none" }}
+                onChange={async (e) => {
+                  await pickExtraPhotos(e.target.files);
+                }}
+              />
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "14px 8px",
+                  gap: 6,
+                }}
+              >
+                <div style={{ fontSize: 18 }}>🖼️</div>
+                <div style={{ fontSize: 13, color: "#e5e7eb" }}>
+                  Click to upload additional photos
+                </div>
+                <div style={{ fontSize: 11, color: "rgba(148,163,184,0.9)" }}>
+                  Select multiple photos
+                </div>
+              </div>
+            </label>
+            {(state.extraImages?.length ?? 0) > 0 && (
+              <div
+                style={{
+                  marginTop: 8,
+                  display: "grid",
+                  gridTemplateColumns: "repeat(3, minmax(0,1fr))",
+                  gap: 6,
+                }}
+              >
+                {(state.extraImages ?? []).map((img, idx) => (
+                  <div
+                    key={`${img}-${idx}`}
+                    style={{
+                      position: "relative",
+                      borderRadius: 10,
+                      overflow: "hidden",
+                      border: "1px solid rgba(148,163,184,0.5)",
+                    }}
+                  >
+                    <img
+                      src={img}
+                      alt=""
+                      style={{ width: "100%", height: 72, objectFit: "cover" }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeExtraImage(idx)}
+                      style={{
+                        position: "absolute",
+                        top: 4,
+                        right: 4,
+                        width: 18,
+                        height: 18,
+                        borderRadius: 999,
+                        border: "none",
+                        background: "rgba(15,23,42,0.85)",
+                        color: "#f97373",
+                        fontSize: 11,
+                        cursor: "pointer",
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 7. GitHub Link */}
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ marginBottom: 4, fontSize: 12, fontWeight: 600 }}>
+              <span>GitHub Link</span>
+              <span style={{ color: "rgba(148,163,184,0.9)", marginLeft: 4 }}>(optional)</span>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                borderRadius: 12,
+                border: "1px solid rgba(148,163,184,0.4)",
+                background: "rgba(15,23,42,0.85)",
+                padding: "6px 10px",
+                gap: 6,
+              }}
+            >
+              <span style={{ fontSize: 15 }}>🐙</span>
+              <input
+                value={state.githubLink}
+                onChange={(e) => setState({ ...state, githubLink: e.target.value })}
+                placeholder="https://github.com/username/repo"
+                style={{
+                  flex: 1,
+                  border: "none",
+                  background: "transparent",
+                  color: "#e5e7eb",
+                  fontSize: 13,
+                }}
+              />
+            </div>
+          </div>
+
+          {/* 8. Live Demo Link */}
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ marginBottom: 4, fontSize: 12, fontWeight: 600 }}>
+              <span>Live Demo Link</span>
+              <span style={{ color: "rgba(148,163,184,0.9)", marginLeft: 4 }}>(optional)</span>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                borderRadius: 12,
+                border: "1px solid rgba(148,163,184,0.4)",
+                background: "rgba(15,23,42,0.85)",
+                padding: "6px 10px",
+                gap: 6,
+              }}
+            >
+              <span style={{ fontSize: 14 }}>↗</span>
+              <input
+                value={state.liveDemoLink}
+                onChange={(e) => setState({ ...state, liveDemoLink: e.target.value })}
+                placeholder="https://your-demo.vercel.app"
+                style={{
+                  flex: 1,
+                  border: "none",
+                  background: "transparent",
+                  color: "#e5e7eb",
+                  fontSize: 13,
+                }}
+              />
+            </div>
+          </div>
+
+          {/* 9. Tech Stack */}
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ marginBottom: 4, fontSize: 12, fontWeight: 600 }}>
+              <span>Tech Stack</span>
+              <span style={{ color: "rgba(148,163,184,0.9)", marginLeft: 4 }}>(optional)</span>
+            </div>
+            <div
+              style={{
+                borderRadius: 12,
+                border: "1px solid rgba(148,163,184,0.4)",
+                background: "rgba(15,23,42,0.85)",
+                padding: 8,
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 6,
+                  marginBottom: 6,
+                }}
+              >
+                {stack.map((t) => (
+                  <span
+                    key={t}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                      padding: "2px 8px",
+                      borderRadius: 999,
+                      border: "1px solid rgba(96,165,250,0.5)",
+                      background: "rgba(37,99,235,0.16)",
+                      fontSize: 11,
+                      color: "#bfdbfe",
+                    }}
+                  >
+                    {t}
+                    <button
+                      type="button"
+                      onClick={() => removeTag(t)}
+                      style={{
+                        border: "none",
+                        background: "transparent",
+                        color: "rgba(248,113,113,0.9)",
+                        fontSize: 10,
+                        cursor: "pointer",
+                      }}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <input
+                value={stackInput}
+                onChange={(e) => setStackInput(e.target.value)}
+                onKeyDown={onStackKeyDown}
+                placeholder="Type a technology and press Enter"
+                style={{
+                  width: "100%",
+                  border: "none",
+                  background: "transparent",
+                  color: "#e5e7eb",
+                  fontSize: 13,
+                }}
+              />
+            </div>
+          </div>
+
+          {/* 10. Featured Toggle */}
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 600 }}>Featured Project</div>
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: "rgba(148,163,184,0.95)",
+                    marginTop: 2,
+                  }}
+                >
+                  Featured projects appear first on portfolio
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setState({ ...state, featured: !state.featured })}
+                style={{
+                  width: 40,
+                  height: 22,
+                  borderRadius: 999,
+                  border: "1px solid rgba(148,163,184,0.6)",
+                  background: state.featured
+                    ? "linear-gradient(135deg, #4F8EF7, #7C3AED)"
+                    : "rgba(15,23,42,0.9)",
+                  padding: 0,
+                  position: "relative",
+                  cursor: "pointer",
+                }}
+              >
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 2,
+                    left: state.featured ? 20 : 2,
+                    width: 16,
+                    height: 16,
+                    borderRadius: "999px",
+                    background: "#f9fafb",
+                    boxShadow: "0 2px 6px rgba(15,23,42,0.6)",
+                    transition: "left 160ms ease",
+                  }}
+                />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div
+          style={{
+            padding: "10px 16px",
+            borderTop: "1px solid rgba(148,163,184,0.25)",
+            display: "flex",
+            gap: 8,
+            justifyContent: "flex-end",
+          }}
+        >
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              padding: "8px 14px",
+              borderRadius: 999,
+              border: "1px solid rgba(148,163,184,0.6)",
+              background: "transparent",
+              color: "#e5e7eb",
+              fontSize: 13,
+              minWidth: 90,
+              cursor: "pointer",
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={submit}
+            disabled={saving}
+            style={{
+              padding: "8px 16px",
+              borderRadius: 999,
+              border: "1px solid rgba(59,130,246,0.9)",
+              background: "linear-gradient(135deg, #4F8EF7, #7C3AED)",
+              color: "#f9fafb",
+              fontSize: 13,
+              fontWeight: 600,
+              minWidth: 110,
+              cursor: saving ? "default" : "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+              opacity: saving ? 0.8 : 1,
+            }}
+          >
+            {saving && (
+              <span
+                style={{
+                  width: 14,
+                  height: 14,
+                  borderRadius: "999px",
+                  border: "2px solid rgba(219,234,254,0.5)",
+                  borderTopColor: "#fff",
+                  animation: "spin 0.8s linear infinite",
+                }}
+              />
+            )}
+            {saving ? "Saving..." : "Save Project"}
+          </button>
+        </div>
+      </div>
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
+    </div>
   );
 }
 
@@ -569,16 +1378,15 @@ function EducationModal({ item, onClose, onSave }: { item: EducationItem; onClos
   );
 }
 
-function AdminHomeRedirect() {
-  return <Navigate to="/admin" replace />;
-}
-
 export function AdminRoutes() {
   return (
     <Routes>
-      <Route path="/admin/login" element={<LoginPage />} />
+      {/* /admin/login (handled by parent /admin/* route) */}
+      <Route path="login" element={<LoginPage />} />
+
+      {/* Protected admin shell at /admin and /admin/* */}
       <Route element={<AdminGuard />}>
-        <Route path="/admin" element={<AdminLayout />}>
+        <Route element={<AdminLayout />}>
           <Route index element={<DashboardPage />} />
           <Route path="projects" element={<ProjectsPage />} />
           <Route path="skills" element={<SkillsPage />} />
@@ -589,7 +1397,9 @@ export function AdminRoutes() {
           <Route path="contact" element={<ContactPage />} />
         </Route>
       </Route>
-      <Route path="*" element={<AdminHomeRedirect />} />
+
+      {/* Fallback: anything under /admin/* goes to /admin (Dashboard or login via guard) */}
+      <Route path="*" element={<Navigate to="/admin" replace />} />
     </Routes>
   );
 }

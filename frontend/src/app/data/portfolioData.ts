@@ -11,6 +11,7 @@ export type ProjectItem = {
   shortDescription: string;
   longDescription: string;
   thumbnail: string;
+  extraImages?: string[];
   githubLink: string;
   liveDemoLink: string;
   techStack: string[];
@@ -96,6 +97,7 @@ const DATA_EVENT = "portfolio-data-updated";
 export const TOAST_EVENT = "portfolio-admin-toast";
 
 const nowStamp = () => new Date().toLocaleString();
+const ADMIN_TOKEN_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 export const defaultPortfolioData: PortfolioData = {
   projects: [
@@ -112,6 +114,7 @@ export const defaultPortfolioData: PortfolioData = {
       githubLink: "#",
       liveDemoLink: "#",
       techStack: ["React", "Node.js", "MongoDB", "Tailwind"],
+      extraImages: [],
       featured: true,
     },
     {
@@ -126,6 +129,7 @@ export const defaultPortfolioData: PortfolioData = {
       githubLink: "#",
       liveDemoLink: "#",
       techStack: ["Next.js", "TypeScript", "Framer Motion"],
+      extraImages: [],
       featured: true,
     },
   ],
@@ -370,6 +374,9 @@ export const defaultPortfolioData: PortfolioData = {
 };
 
 function readData(): PortfolioData {
+  if (typeof window === "undefined") {
+    return defaultPortfolioData;
+  }
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return defaultPortfolioData;
@@ -392,19 +399,39 @@ function readData(): PortfolioData {
 }
 
 function writeData(data: PortfolioData) {
+  if (typeof window === "undefined") return;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   window.dispatchEvent(new Event(DATA_EVENT));
 }
 
 export function getAdminToken() {
-  return localStorage.getItem(TOKEN_KEY);
+  if (typeof window === "undefined") return null;
+  const raw = localStorage.getItem(TOKEN_KEY);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as { value?: string; issuedAt?: number } | null;
+    if (parsed && typeof parsed.issuedAt === "number" && parsed.value) {
+      const age = Date.now() - parsed.issuedAt;
+      if (age > ADMIN_TOKEN_MAX_AGE_MS) {
+        localStorage.removeItem(TOKEN_KEY);
+        return null;
+      }
+      return parsed.value;
+    }
+  } catch {
+    // legacy plain-string token, fall through
+  }
+  return raw;
 }
 
 export function setAdminToken(token: string) {
-  localStorage.setItem(TOKEN_KEY, token);
+  if (typeof window === "undefined") return;
+  const wrapped = { value: token, issuedAt: Date.now() };
+  localStorage.setItem(TOKEN_KEY, JSON.stringify(wrapped));
 }
 
 export function clearAdminToken() {
+  if (typeof window === "undefined") return;
   localStorage.removeItem(TOKEN_KEY);
 }
 
