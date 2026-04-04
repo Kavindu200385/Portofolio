@@ -5,6 +5,11 @@ const adminSecret = () =>
       "",
   );
 
+/** True when env has a non-empty admin secret (required for POST/PUT/DELETE). */
+export function isAdminSecretConfigured(): boolean {
+  return Boolean(adminSecret().trim());
+}
+
 async function parseJson(res: Response) {
   const text = await res.text();
   if (!text) return null;
@@ -12,6 +17,16 @@ async function parseJson(res: Response) {
     return JSON.parse(text);
   } catch {
     return null;
+  }
+}
+
+async function parseJsonResponse<T>(res: Response): Promise<T> {
+  const text = await res.text();
+  if (!text) return {} as T;
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return {} as T;
   }
 }
 
@@ -37,7 +52,7 @@ export async function adminPost<T>(path: string, body: unknown): Promise<T> {
     const b = await parseJson(res);
     throw new Error((b as { error?: string })?.error || `Request failed (${res.status})`);
   }
-  return (await res.json()) as T;
+  return parseJsonResponse<T>(res);
 }
 
 export async function adminPut<T>(path: string, body?: unknown): Promise<T> {
@@ -53,7 +68,7 @@ export async function adminPut<T>(path: string, body?: unknown): Promise<T> {
     const b = await parseJson(res);
     throw new Error((b as { error?: string })?.error || `Request failed (${res.status})`);
   }
-  return (await res.json()) as T;
+  return parseJsonResponse<T>(res);
 }
 
 export async function adminDelete<T>(path: string): Promise<T> {
@@ -67,5 +82,5 @@ export async function adminDelete<T>(path: string): Promise<T> {
     const b = await parseJson(res);
     throw new Error((b as { error?: string })?.error || `Request failed (${res.status})`);
   }
-  return (await res.json()) as T;
+  return parseJsonResponse<T>(res);
 }

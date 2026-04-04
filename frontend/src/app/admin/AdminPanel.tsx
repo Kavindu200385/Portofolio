@@ -13,7 +13,7 @@ import {
   type ProjectItem,
   type SkillItem,
 } from "../data/portfolioData";
-import { adminDelete, adminPost, adminPut } from "../lib/portfolioApi";
+import { adminDelete, adminPost, adminPut, isAdminSecretConfigured } from "../lib/portfolioApi";
 import { SkillIcon } from "../components/skillIcons";
 
 function readAsBase64(file: File): Promise<string> {
@@ -86,6 +86,7 @@ function AdminLayout() {
   const navigate = useNavigate();
   const [toast, setToast] = useState<string>("");
   const [toastKind, setToastKind] = useState<"success" | "error">("success");
+  const secretOk = isAdminSecretConfigured();
 
   useEffect(() => {
     const handler = (ev: Event) => {
@@ -111,6 +112,24 @@ function AdminLayout() {
       className="admin-root"
     >
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
+        {!secretOk ? (
+          <div
+            style={{
+              ...sectionCardStyle(),
+              padding: "12px 14px",
+              marginBottom: 12,
+              borderColor: "rgba(251,191,36,0.45)",
+              color: "#fcd34d",
+              fontSize: 12,
+              lineHeight: 1.45,
+            }}
+          >
+            <strong style={{ display: "block", marginBottom: 4 }}>Admin API secret missing</strong>
+            Set <code style={{ color: "#e5e7eb" }}>NEXT_PUBLIC_ADMIN_SECRET</code> in{" "}
+            <code style={{ color: "#e5e7eb" }}>.env</code> / Vercel (same value as server{" "}
+            <code style={{ color: "#e5e7eb" }}>ADMIN_SECRET</code>) or saves will return 401.
+          </div>
+        ) : null}
         <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
           <div className="admin-sidebar"><Sidebar /></div>
           <main style={{ flex: 1, minWidth: 0 }}>

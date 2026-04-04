@@ -433,15 +433,6 @@ async function fetchJsonLoose(path: string): Promise<unknown> {
   }
 }
 
-async function fetchJsonStrict(path: string): Promise<unknown> {
-  const res = await fetch(path);
-  if (!res.ok) throw new Error(`Request failed: ${path} (${res.status})`);
-  if (res.status === 204) return null;
-  const text = await res.text();
-  if (!text) return null;
-  return JSON.parse(text);
-}
-
 function buildPortfolioData(
   rawProjects: unknown,
   rawSkills: unknown,
@@ -563,21 +554,12 @@ function buildPortfolioData(
   };
 }
 
+/**
+ * Loads all sections in parallel. Uses resilient fetches (never throws per endpoint).
+ * `admin` controls empty-vs-default behavior in buildPortfolioData, not fetch strictness.
+ */
 export async function loadPortfolioFromApi(admin: boolean): Promise<PortfolioData> {
-  if (admin) {
-    const [rawProjects, rawSkills, rawExp, rawEdu, rawAbout, rawHero, rawContact] = await Promise.all([
-      fetchJsonStrict("/api/projects"),
-      fetchJsonStrict("/api/skills"),
-      fetchJsonStrict("/api/experience"),
-      fetchJsonStrict("/api/education"),
-      fetchJsonStrict("/api/about"),
-      fetchJsonStrict("/api/hero"),
-      fetchJsonStrict("/api/contact"),
-    ]);
-    return buildPortfolioData(rawProjects, rawSkills, rawExp, rawEdu, rawAbout, rawHero, rawContact, true);
-  }
-
-  const settled = await Promise.allSettled([
+  const [rawProjects, rawSkills, rawExp, rawEdu, rawAbout, rawHero, rawContact] = await Promise.all([
     fetchJsonLoose("/api/projects"),
     fetchJsonLoose("/api/skills"),
     fetchJsonLoose("/api/experience"),
@@ -586,12 +568,7 @@ export async function loadPortfolioFromApi(admin: boolean): Promise<PortfolioDat
     fetchJsonLoose("/api/hero"),
     fetchJsonLoose("/api/contact"),
   ]);
-
-  const [rawProjects, rawSkills, rawExp, rawEdu, rawAbout, rawHero, rawContact] = settled.map((r) =>
-    r.status === "fulfilled" ? r.value : null,
-  ) as [unknown, unknown, unknown, unknown, unknown, unknown, unknown];
-
-  return buildPortfolioData(rawProjects, rawSkills, rawExp, rawEdu, rawAbout, rawHero, rawContact, false);
+  return buildPortfolioData(rawProjects, rawSkills, rawExp, rawEdu, rawAbout, rawHero, rawContact, admin);
 }
 
 export function getAdminToken() {
@@ -642,7 +619,11 @@ const PortfolioDataContext = createContext<PortfolioContextValue | null>(null);
 /** Single source of portfolio API state for the whole app (avoids duplicate fetches and empty sections). */
 export function PortfolioDataProvider({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
-  const admin = pathname.startsWith("/admin");
+  /** Login page should not use strict “admin empty” mode or require API; same as public for initial load. */
+  const isLoginRoute =
+    pathname === "/admin/login" || pathname.endsWith("/admin/login");
+  /** True for /admin/* except login — drives empty lists vs defaults in buildPortfolioData. */
+  const portfolioAdminMode = pathname.startsWith("/admin") && !isLoginRoute;
 
   const [data, setData] = useState<PortfolioData>(() => ({
     ...defaultPortfolioData,
@@ -655,18 +636,18 @@ export function PortfolioDataProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     setError(null);
     try {
-      const next = await loadPortfolioFromApi(admin);
+      const next = await loadPortfolioFromApi(portfolioAdminMode);
       setData(next);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Failed to load portfolio data";
       setError(msg);
-      if (!admin) {
+      if (!portfolioAdminMode) {
         setData({ ...defaultPortfolioData, changesLog: [] });
       }
     } finally {
       setLoading(false);
     }
-  }, [admin]);
+  }, [portfolioAdminMode]);
 
   useEffect(() => {
     void refetch();
