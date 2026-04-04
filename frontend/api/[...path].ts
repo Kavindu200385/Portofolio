@@ -11,7 +11,6 @@ import { normalizeSkillBody } from "../lib/api/skillBody";
 import { experienceFromClient } from "../lib/api/experienceBody";
 import { educationFromClient } from "../lib/api/educationBody";
 import { aboutFromClient, contactFromClient, heroFromClient } from "../lib/api/singletonPayloads";
-import { seedDefaultPortfolioIfEmpty } from "../lib/seedDefaultPortfolio";
 import About from "../models/About";
 import Contact from "../models/Contact";
 import Education from "../models/Education";
@@ -61,6 +60,7 @@ export default async function handler(req: any, res: any) {
         return res.status(405).json({ error: "Method not allowed" });
       }
       if (!requireAdmin(req, res)) return;
+      const { seedDefaultPortfolioIfEmpty } = await import("../lib/seedDefaultPortfolio");
       const summary = await seedDefaultPortfolioIfEmpty();
       return res.status(200).json({ ok: true, summary });
     }
