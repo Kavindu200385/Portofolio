@@ -278,6 +278,8 @@ function LoginPage() {
 
 function DashboardPage() {
   const { data, loading, error, refetch } = usePortfolioData();
+  const [seeding, setSeeding] = useState(false);
+  const secretOk = isAdminSecretConfigured();
   if (loading) return <Skeleton />;
   if (error) return <ErrorRetry message={error} onRetry={() => void refetch()} />;
   const stats = [
@@ -286,6 +288,30 @@ function DashboardPage() {
     ["Total Experience", data.experiences.length],
     ["Total Education", data.education.length],
   ];
+
+  const seedEmptyCollections = async () => {
+    if (!secretOk) {
+      pushAdminToast("error", "Set NEXT_PUBLIC_ADMIN_SECRET (or VITE_ADMIN_SECRET) to match ADMIN_SECRET on the server.");
+      return;
+    }
+    if (
+      !window.confirm(
+        "Insert the built-in portfolio content into MongoDB only where a collection is empty. Existing saved data is not removed or overwritten.",
+      )
+    )
+      return;
+    setSeeding(true);
+    try {
+      await adminPost("/api/admin/seed-defaults", {});
+      await refetch();
+      pushAdminToast("success", "Empty collections were filled from the built-in content.");
+    } catch (e) {
+      pushAdminToast("error", e instanceof Error ? e.message : "Seed failed");
+    } finally {
+      setSeeding(false);
+    }
+  };
+
   return (
     <div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 12 }}>
@@ -295,6 +321,28 @@ function DashboardPage() {
             <div style={{ fontSize: 30, fontWeight: 800, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{val}</div>
           </div>
         ))}
+      </div>
+      <div style={{ marginTop: 12, ...sectionCardStyle(), padding: 16 }}>
+        <div style={{ fontWeight: 700, marginBottom: 8 }}>Database</div>
+        <p style={{ margin: "0 0 12px", fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.5 }}>
+          If the site shows your built-in content but MongoDB is empty, use this once to copy that same content into the database. Only empty collections are filled; nothing is deleted.
+        </p>
+        <button
+          type="button"
+          disabled={seeding || !secretOk}
+          onClick={() => void seedEmptyCollections()}
+          style={{
+            borderRadius: 10,
+            border: "1px solid rgba(79,142,247,0.45)",
+            background: secretOk ? "rgba(79,142,247,0.15)" : "rgba(255,255,255,0.06)",
+            color: secretOk ? "#fff" : "rgba(255,255,255,0.35)",
+            padding: "10px 14px",
+            fontSize: 13,
+            cursor: secretOk && !seeding ? "pointer" : "not-allowed",
+          }}
+        >
+          {seeding ? "Saving…" : "Copy built-in content to database (empty collections only)"}
+        </button>
       </div>
       <div style={{ marginTop: 12, ...sectionCardStyle(), padding: 16 }}>
         <div style={{ fontWeight: 700, marginBottom: 10 }}>Recent changes</div>
