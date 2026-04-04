@@ -4,23 +4,28 @@
  * Helpers live in ../lib/api/* (not under /api, so they are not separate functions).
  */
 import mongoose from "mongoose";
-import { connectDB } from "../lib/mongodb";
-import { apiPathSegments, requireAdmin } from "../lib/api/helpers";
-import { normalizeProjectBody } from "../lib/api/projectBody";
-import { normalizeSkillBody } from "../lib/api/skillBody";
-import { experienceFromClient } from "../lib/api/experienceBody";
-import { educationFromClient } from "../lib/api/educationBody";
-import { aboutFromClient, contactFromClient, heroFromClient } from "../lib/api/singletonPayloads";
-import About from "../models/About";
-import Contact from "../models/Contact";
-import Education from "../models/Education";
-import Experience from "../models/Experience";
-import Hero from "../models/Hero";
-import Project from "../models/Project";
-import Skill from "../models/Skill";
+import { connectDB } from "../lib/mongodb.js";
+import { apiPathSegments, requireAdmin } from "../lib/api/helpers.js";
+import { normalizeProjectBody } from "../lib/api/projectBody.js";
+import { normalizeSkillBody } from "../lib/api/skillBody.js";
+import { experienceFromClient } from "../lib/api/experienceBody.js";
+import { educationFromClient } from "../lib/api/educationBody.js";
+import { aboutFromClient, contactFromClient, heroFromClient } from "../lib/api/singletonPayloads.js";
+import About from "../models/About.js";
+import Contact from "../models/Contact.js";
+import Education from "../models/Education.js";
+import Experience from "../models/Experience.js";
+import Hero from "../models/Hero.js";
+import Project from "../models/Project.js";
+import Skill from "../models/Skill.js";
 
 export default async function handler(req: any, res: any) {
-  const seg = apiPathSegments(req);
+  let seg: string[];
+  try {
+    seg = apiPathSegments(req);
+  } catch {
+    return res.status(400).json({ error: "Invalid request URL" });
+  }
   const method = req.method || "GET";
 
   try {
@@ -60,7 +65,7 @@ export default async function handler(req: any, res: any) {
         return res.status(405).json({ error: "Method not allowed" });
       }
       if (!requireAdmin(req, res)) return;
-      const { seedDefaultPortfolioIfEmpty } = await import("../lib/seedDefaultPortfolio");
+      const { seedDefaultPortfolioIfEmpty } = await import("../lib/seedDefaultPortfolio.js");
       const summary = await seedDefaultPortfolioIfEmpty();
       return res.status(200).json({ ok: true, summary });
     }

@@ -3,19 +3,19 @@
  * Inserts built-in portfolio content into MongoDB only when each collection is empty.
  * Does not delete or overwrite existing documents (safe to run on a partially filled DB).
  */
-import { defaultPortfolioContent } from "./defaultPortfolioContent";
-import { normalizeProjectBody } from "./api/projectBody";
-import { normalizeSkillBody } from "./api/skillBody";
-import { experienceFromClient } from "./api/experienceBody";
-import { educationFromClient } from "./api/educationBody";
-import { aboutFromClient, contactFromClient, heroFromClient } from "./api/singletonPayloads";
-import About from "../models/About";
-import Contact from "../models/Contact";
-import Education from "../models/Education";
-import Experience from "../models/Experience";
-import Hero from "../models/Hero";
-import Project from "../models/Project";
-import Skill from "../models/Skill";
+import { defaultPortfolioContent } from "./defaultPortfolioContent.js";
+import { normalizeProjectBody } from "./api/projectBody.js";
+import { normalizeSkillBody } from "./api/skillBody.js";
+import { experienceFromClient } from "./api/experienceBody.js";
+import { educationFromClient } from "./api/educationBody.js";
+import { aboutFromClient, contactFromClient, heroFromClient } from "./api/singletonPayloads.js";
+import About from "../models/About.js";
+import Contact from "../models/Contact.js";
+import Education from "../models/Education.js";
+import Experience from "../models/Experience.js";
+import Hero from "../models/Hero.js";
+import Project from "../models/Project.js";
+import Skill from "../models/Skill.js";
 
 export async function seedDefaultPortfolioIfEmpty() {
   const summary = {
