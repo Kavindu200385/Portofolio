@@ -1,3 +1,5 @@
+"use client";
+
 import { useRef, useState } from "react";
 import { motion, useInView } from "motion/react";
 import { SectionLabel } from "./KaviAbout";
@@ -101,8 +103,16 @@ function SkillCard({
 export function KaviSkills() {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
-  const { data } = usePortfolioData();
+  const { data, loading } = usePortfolioData();
   const skills = data.skills;
+
+  if (loading) {
+    return (
+      <section id="skills" style={{ padding: "120px 24px", background: "rgba(14,14,28,0.5)" }}>
+        <div style={{ maxWidth: "1100px", margin: "0 auto", color: "rgba(255,255,255,0.35)" }}>Loading skills…</div>
+      </section>
+    );
+  }
 
   return (
     <section

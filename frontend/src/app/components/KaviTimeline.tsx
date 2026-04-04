@@ -1,3 +1,5 @@
+"use client";
+
 import { useRef } from "react";
 import { motion, useInView } from "motion/react";
 import { SectionLabel } from "./KaviAbout";
@@ -6,7 +8,7 @@ import { usePortfolioData } from "../data/portfolioData";
 type TimelineType = "experience" | "education";
 
 type TimelineEntry = {
-  id: number;
+  id: string;
   type: TimelineType;
   icon: string;
   side: "left" | "right";
@@ -232,10 +234,10 @@ function TimelineCard({
 export function KaviTimeline() {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
-  const { data } = usePortfolioData();
+  const { data, loading } = usePortfolioData();
 
   const experienceEntries: TimelineEntry[] = data.experiences.map((item) => ({
-    id: Number(item.id.replace(/\D/g, "")) || Date.now(),
+    id: item.id,
     type: "experience",
     org: item.companyName,
     role: item.role,
@@ -248,7 +250,7 @@ export function KaviTimeline() {
   }));
 
   const educationEntries: TimelineEntry[] = data.education.map((item) => ({
-    id: Number(item.id.replace(/\D/g, "")) || Date.now(),
+    id: item.id,
     type: "education",
     org: item.institutionName,
     role: item.degree,
@@ -259,6 +261,16 @@ export function KaviTimeline() {
     side: item.side,
     description: item.description,
   }));
+
+  if (loading) {
+    return (
+      <section id="timeline" style={{ padding: "120px 24px", position: "relative" }}>
+        <div style={{ maxWidth: "1100px", margin: "0 auto", color: "rgba(255,255,255,0.35)", fontFamily: "'Inter', sans-serif" }}>
+          Loading journey…
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section

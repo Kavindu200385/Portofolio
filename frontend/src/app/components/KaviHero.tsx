@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useRef } from "react";
 import { motion } from "motion/react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
@@ -76,7 +78,25 @@ function AuroraBlob({
 }
 
 export function KaviHero() {
-  const { data } = usePortfolioData();
+  const { data, loading } = usePortfolioData();
+  if (loading) {
+    return (
+      <section
+        id="intro"
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "100px 24px 60px",
+          color: "rgba(255,255,255,0.35)",
+          fontFamily: "'Inter', sans-serif",
+        }}
+      >
+        Loading…
+      </section>
+    );
+  }
   const HEADING = data.hero.heading;
   const PROFILE_IMG = data.hero.heroPhoto;
   const cta1IsAnchor = data.hero.cta1Link.startsWith("#");

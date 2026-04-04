@@ -1,4 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  mapAboutFromApi,
+  mapContactFromApi,
+  mapEducationFromApi,
+  mapExperienceFromApi,
+  mapHeroFromApi,
+  mapProjectFromApi,
+  mapSkillFromApi,
+} from "../lib/portfolioMappers";
 
 export type ProjectType = "Group" | "Individual" | "Research";
 export type SkillCategory = "Frontend" | "Backend" | "DevOps" | "Tools";
@@ -91,13 +100,10 @@ export type PortfolioData = {
   changesLog: string[];
 };
 
-const STORAGE_KEY = "portfolio_data_v1";
 const TOKEN_KEY = "admin_auth_token_v1";
-const DATA_EVENT = "portfolio-data-updated";
 export const TOAST_EVENT = "portfolio-admin-toast";
 
-const nowStamp = () => new Date().toLocaleString();
-const ADMIN_TOKEN_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const ADMIN_TOKEN_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
 export const defaultPortfolioData: PortfolioData = {
   projects: [
@@ -373,35 +379,209 @@ export const defaultPortfolioData: PortfolioData = {
   changesLog: [],
 };
 
-function readData(): PortfolioData {
-  if (typeof window === "undefined") {
-    return defaultPortfolioData;
-  }
+const emptyAbout: AboutData = {
+  paragraphs: ["", "", ""],
+  badges: [],
+  profilePhoto: "",
+};
+
+const emptyHero: HeroData = {
+  heading: "",
+  subHeading: "",
+  cta1Label: "",
+  cta1Link: "",
+  cta2Label: "",
+  cta2Link: "",
+  heroPhoto: "",
+};
+
+const emptyContact: ContactData = {
+  email: "",
+  whatsapp: "",
+  linkedin: "",
+  github: "",
+  phone: "",
+  heading: "",
+  description: "",
+};
+
+export function pushAdminToast(type: "success" | "error", message: string) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(TOAST_EVENT, { detail: { type, message } }));
+}
+
+async function fetchJsonLoose(path: string): Promise<unknown> {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return defaultPortfolioData;
-    const parsed = JSON.parse(raw) as Partial<PortfolioData>;
-    return {
-      ...defaultPortfolioData,
-      ...parsed,
-      about: { ...defaultPortfolioData.about, ...parsed.about },
-      hero: { ...defaultPortfolioData.hero, ...parsed.hero },
-      contact: { ...defaultPortfolioData.contact, ...parsed.contact },
-      projects: parsed.projects?.length ? parsed.projects : defaultPortfolioData.projects,
-      skills: parsed.skills?.length ? parsed.skills : defaultPortfolioData.skills,
-      experiences: parsed.experiences?.length ? parsed.experiences : defaultPortfolioData.experiences,
-      education: parsed.education?.length ? parsed.education : defaultPortfolioData.education,
-      changesLog: parsed.changesLog ?? [],
-    };
+    const res = await fetch(path);
+    if (!res.ok) return null;
+    if (res.status === 204) return null;
+    const text = await res.text();
+    if (!text) return null;
+    return JSON.parse(text);
   } catch {
-    return defaultPortfolioData;
+    return null;
   }
 }
 
-function writeData(data: PortfolioData) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  window.dispatchEvent(new Event(DATA_EVENT));
+async function fetchJsonStrict(path: string): Promise<unknown> {
+  const res = await fetch(path);
+  if (!res.ok) throw new Error(`Request failed: ${path} (${res.status})`);
+  if (res.status === 204) return null;
+  const text = await res.text();
+  if (!text) return null;
+  return JSON.parse(text);
+}
+
+function buildPortfolioData(
+  rawProjects: unknown,
+  rawSkills: unknown,
+  rawExp: unknown,
+  rawEdu: unknown,
+  rawAbout: unknown,
+  rawHero: unknown,
+  rawContact: unknown,
+  admin: boolean,
+): PortfolioData {
+
+  const projects: ProjectItem[] = (() => {
+    if (rawProjects == null) {
+      return admin ? [] : defaultPortfolioData.projects;
+    }
+    const arr = rawProjects;
+    if (!Array.isArray(arr) || arr.length === 0) {
+      return admin ? [] : defaultPortfolioData.projects;
+    }
+    return arr.map((d) => mapProjectFromApi(d as Record<string, unknown>));
+  })();
+
+  const skills: SkillItem[] = (() => {
+    if (rawSkills == null) {
+      return admin ? [] : defaultPortfolioData.skills;
+    }
+    const arr = rawSkills;
+    if (!Array.isArray(arr) || arr.length === 0) {
+      return admin ? [] : defaultPortfolioData.skills;
+    }
+    return arr.map((d) => mapSkillFromApi(d as Record<string, unknown>));
+  })();
+
+  const experiences: ExperienceItem[] = (() => {
+    if (rawExp == null) {
+      return admin ? [] : defaultPortfolioData.experiences;
+    }
+    const arr = rawExp;
+    if (!Array.isArray(arr) || arr.length === 0) {
+      return admin ? [] : defaultPortfolioData.experiences;
+    }
+    return arr.map((d, i) => mapExperienceFromApi(d as Record<string, unknown>, i));
+  })();
+
+  const education: EducationItem[] = (() => {
+    if (rawEdu == null) {
+      return admin ? [] : defaultPortfolioData.education;
+    }
+    const arr = rawEdu;
+    if (!Array.isArray(arr) || arr.length === 0) {
+      return admin ? [] : defaultPortfolioData.education;
+    }
+    return arr.map((d, i) => mapEducationFromApi(d as Record<string, unknown>, i));
+  })();
+
+  const about: AboutData = (() => {
+    if (rawAbout == null) {
+      return admin ? emptyAbout : defaultPortfolioData.about;
+    }
+    const doc = rawAbout as Record<string, unknown> | null;
+    if (!doc) {
+      return admin ? emptyAbout : defaultPortfolioData.about;
+    }
+    const m = mapAboutFromApi(doc);
+    if (!m) {
+      return admin ? emptyAbout : defaultPortfolioData.about;
+    }
+    if (!admin && !m.paragraphs.some((p) => p.trim())) {
+      return defaultPortfolioData.about;
+    }
+    return m;
+  })();
+
+  const hero: HeroData = (() => {
+    if (rawHero == null) {
+      return admin ? emptyHero : defaultPortfolioData.hero;
+    }
+    const doc = rawHero as Record<string, unknown> | null;
+    if (!doc) {
+      return admin ? emptyHero : defaultPortfolioData.hero;
+    }
+    const m = mapHeroFromApi(doc);
+    if (!m) {
+      return admin ? emptyHero : defaultPortfolioData.hero;
+    }
+    if (!admin && !m.heading.trim() && !m.subHeading.trim()) {
+      return defaultPortfolioData.hero;
+    }
+    return m;
+  })();
+
+  const contact: ContactData = (() => {
+    if (rawContact == null) {
+      return admin ? emptyContact : defaultPortfolioData.contact;
+    }
+    const doc = rawContact as Record<string, unknown> | null;
+    if (!doc) {
+      return admin ? emptyContact : defaultPortfolioData.contact;
+    }
+    const m = mapContactFromApi(doc);
+    if (!m) {
+      return admin ? emptyContact : defaultPortfolioData.contact;
+    }
+    if (!admin && !m.email.trim() && !m.heading.trim()) {
+      return defaultPortfolioData.contact;
+    }
+    return m;
+  })();
+
+  return {
+    projects,
+    skills,
+    experiences,
+    education,
+    about,
+    hero,
+    contact,
+    changesLog: [],
+  };
+}
+
+export async function loadPortfolioFromApi(admin: boolean): Promise<PortfolioData> {
+  if (admin) {
+    const [rawProjects, rawSkills, rawExp, rawEdu, rawAbout, rawHero, rawContact] = await Promise.all([
+      fetchJsonStrict("/api/projects"),
+      fetchJsonStrict("/api/skills"),
+      fetchJsonStrict("/api/experience"),
+      fetchJsonStrict("/api/education"),
+      fetchJsonStrict("/api/about"),
+      fetchJsonStrict("/api/hero"),
+      fetchJsonStrict("/api/contact"),
+    ]);
+    return buildPortfolioData(rawProjects, rawSkills, rawExp, rawEdu, rawAbout, rawHero, rawContact, true);
+  }
+
+  const settled = await Promise.allSettled([
+    fetchJsonLoose("/api/projects"),
+    fetchJsonLoose("/api/skills"),
+    fetchJsonLoose("/api/experience"),
+    fetchJsonLoose("/api/education"),
+    fetchJsonLoose("/api/about"),
+    fetchJsonLoose("/api/hero"),
+    fetchJsonLoose("/api/contact"),
+  ]);
+
+  const [rawProjects, rawSkills, rawExp, rawEdu, rawAbout, rawHero, rawContact] = settled.map((r) =>
+    r.status === "fulfilled" ? r.value : null,
+  ) as [unknown, unknown, unknown, unknown, unknown, unknown, unknown];
+
+  return buildPortfolioData(rawProjects, rawSkills, rawExp, rawEdu, rawAbout, rawHero, rawContact, false);
 }
 
 export function getAdminToken() {
@@ -435,46 +615,51 @@ export function clearAdminToken() {
   localStorage.removeItem(TOKEN_KEY);
 }
 
-export function usePortfolioData() {
-  const [data, setData] = useState<PortfolioData>(() => readData());
+export type UsePortfolioOptions = {
+  /** When true, empty API responses stay empty (admin). When false, defaults fill empty sections (public site). */
+  admin?: boolean;
+};
+
+export function usePortfolioData(opts?: UsePortfolioOptions) {
+  const admin = !!opts?.admin;
+  const [data, setData] = useState<PortfolioData>(() => ({
+    ...defaultPortfolioData,
+    changesLog: [],
+  }));
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const refetch = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const next = await loadPortfolioFromApi(admin);
+      setData(next);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Failed to load portfolio data";
+      setError(msg);
+      if (!admin) {
+        setData({ ...defaultPortfolioData, changesLog: [] });
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [admin]);
 
   useEffect(() => {
-    setData(readData());
-    setLoading(false);
-    const onStorage = () => setData(readData());
-    window.addEventListener("storage", onStorage);
-    window.addEventListener(DATA_EVENT, onStorage);
-    return () => {
-      window.removeEventListener("storage", onStorage);
-      window.removeEventListener(DATA_EVENT, onStorage);
-    };
-  }, []);
+    void refetch();
+  }, [refetch]);
 
-  const api = useMemo(() => {
-    const save = (next: PortfolioData, logMessage?: string) => {
-      const withLog =
-        logMessage && logMessage.trim()
-          ? { ...next, changesLog: [`${nowStamp()} — ${logMessage}`, ...next.changesLog].slice(0, 50) }
-          : next;
-      setData(withLog);
-      writeData(withLog);
-      if (logMessage) {
-        window.dispatchEvent(new CustomEvent(TOAST_EVENT, { detail: { type: "success", message: logMessage } }));
-      }
-    };
-
-    return {
+  const api = useMemo(
+    () => ({
       loading,
+      error,
       data,
-      save,
-      resetSection: (section: keyof PortfolioData) => {
-        const next = { ...data, [section]: defaultPortfolioData[section] } as PortfolioData;
-        save(next, `Reset ${section} to default`);
-      },
-    };
-  }, [data, loading]);
+      refetch,
+      pushAdminToast,
+    }),
+    [loading, error, data, refetch],
+  );
 
   return api;
 }
-

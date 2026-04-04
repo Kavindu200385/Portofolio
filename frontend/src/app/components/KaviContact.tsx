@@ -1,3 +1,5 @@
+"use client";
+
 import { useRef, useState } from "react";
 import { motion, useInView } from "motion/react";
 import { SectionLabel } from "./KaviAbout";
@@ -92,9 +94,17 @@ export function KaviContact() {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
   const [emailCopied, setEmailCopied] = useState(false);
-  const { data } = usePortfolioData();
+  const { data, loading } = usePortfolioData();
   const EMAIL = data.contact.email;
   const PHONE = data.contact.phone;
+
+  if (loading) {
+    return (
+      <section id="contact" style={{ padding: "120px 24px", position: "relative", color: "rgba(255,255,255,0.35)" }}>
+        Loading contact…
+      </section>
+    );
+  }
 
   const copyEmail = async () => {
     try {

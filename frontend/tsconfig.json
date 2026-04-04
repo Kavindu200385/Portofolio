@@ -13,6 +13,6 @@
     "types": ["vite/client"],
     "strict": true
   },
-  "include": ["src"]
+  "include": ["src", "api", "lib", "models"]
 }
 

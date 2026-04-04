@@ -1,3 +1,5 @@
+"use client";
+
 import { useRef, useState } from "react";
 import { motion, useInView } from "motion/react";
 import { SectionLabel } from "./KaviAbout";
@@ -206,12 +208,20 @@ function ProjectCard({
 export function KaviWorks() {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
-  const { data } = usePortfolioData();
+  const { data, loading } = usePortfolioData();
   const projects = [
     // Featured projects first, then the rest, while preserving relative order
     ...data.projects.filter((p) => p.featured),
     ...data.projects.filter((p) => !p.featured),
   ];
+
+  if (loading) {
+    return (
+      <section id="works" style={{ padding: "120px 24px" }}>
+        <div style={{ maxWidth: "1200px", margin: "0 auto", color: "rgba(255,255,255,0.35)" }}>Loading works…</div>
+      </section>
+    );
+  }
 
   return (
     <section

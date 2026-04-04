@@ -2,7 +2,9 @@ import { FormEvent, useEffect, useState } from "react";
 import { Link, Navigate, Outlet, Route, Routes, useLocation, useNavigate } from "react-router";
 import {
   clearAdminToken,
+  defaultPortfolioData,
   getAdminToken,
+  pushAdminToast,
   setAdminToken,
   TOAST_EVENT,
   usePortfolioData,
@@ -11,6 +13,7 @@ import {
   type ProjectItem,
   type SkillItem,
 } from "../data/portfolioData";
+import { adminDelete, adminPost, adminPut } from "../lib/portfolioApi";
 import { SkillIcon } from "../components/skillIcons";
 
 function readAsBase64(file: File): Promise<string> {
@@ -82,13 +85,15 @@ function AdminLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const [toast, setToast] = useState<string>("");
+  const [toastKind, setToastKind] = useState<"success" | "error">("success");
 
   useEffect(() => {
     const handler = (ev: Event) => {
-      const ce = ev as CustomEvent<{ type: string; message: string }>;
+      const ce = ev as CustomEvent<{ type?: string; message: string }>;
       if (ce.detail?.message) {
         setToast(ce.detail.message);
-        setTimeout(() => setToast(""), 1800);
+        setToastKind(ce.detail.type === "error" ? "error" : "success");
+        setTimeout(() => setToast(""), 2800);
       }
     };
     window.addEventListener(TOAST_EVENT, handler);
@@ -143,7 +148,19 @@ function AdminLayout() {
         </div>
       </div>
       {toast ? (
-        <div style={{ position: "fixed", right: 16, bottom: 16, zIndex: 2000, ...sectionCardStyle(), padding: "10px 14px", borderColor: "rgba(16,185,129,0.35)", color: "#bbf7d0", fontSize: 12 }}>
+        <div
+          style={{
+            position: "fixed",
+            right: 16,
+            bottom: 16,
+            zIndex: 2000,
+            ...sectionCardStyle(),
+            padding: "10px 14px",
+            borderColor: toastKind === "error" ? "rgba(248,113,113,0.45)" : "rgba(16,185,129,0.35)",
+            color: toastKind === "error" ? "#fecaca" : "#bbf7d0",
+            fontSize: 12,
+          }}
+        >
           {toast}
         </div>
       ) : null}
@@ -241,8 +258,9 @@ function LoginPage() {
 }
 
 function DashboardPage() {
-  const { data, loading } = usePortfolioData();
+  const { data, loading, error, refetch } = usePortfolioData({ admin: true });
   if (loading) return <Skeleton />;
+  if (error) return <ErrorRetry message={error} onRetry={() => void refetch()} />;
   const stats = [
     ["Total Projects", data.projects.length],
     ["Total Skills", data.skills.length],
@@ -275,6 +293,31 @@ function Skeleton() {
   return <div style={{ ...sectionCardStyle(), padding: 20, color: "rgba(255,255,255,0.5)" }}>Loading...</div>;
 }
 
+function ErrorRetry({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div style={{ ...sectionCardStyle(), padding: 20, color: "#fecaca" }}>
+      <div style={{ marginBottom: 12, fontSize: 14 }}>{message}</div>
+      <button
+        type="button"
+        onClick={onRetry}
+        style={{
+          borderRadius: 10,
+          border: "1px solid rgba(248,113,113,0.4)",
+          background: "rgba(248,113,113,0.12)",
+          color: "#fecaca",
+          padding: "8px 12px",
+        }}
+      >
+        Retry
+      </button>
+    </div>
+  );
+}
+
+function isMongoId(id: string) {
+  return /^[0-9a-f]{24}$/i.test(id);
+}
+
 function resetButton(onClick: () => void) {
   return (
     <button onClick={onClick} style={{ borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", color: "#fff", padding: "8px 10px", fontSize: 12 }}>
@@ -284,25 +327,78 @@ function resetButton(onClick: () => void) {
 }
 
 function ProjectsPage() {
-  const { data, save, resetSection, loading } = usePortfolioData();
+  const { data, loading, error, refetch } = usePortfolioData({ admin: true });
   const [editing, setEditing] = useState<ProjectItem | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [busy, setBusy] = useState(false);
   if (loading) return <Skeleton />;
+  if (error) return <ErrorRetry message={error} onRetry={() => void refetch()} />;
 
-  const handleReorder = (from: number, to: number) => {
+  const handleReorder = async (from: number, to: number) => {
     if (from === to || from < 0 || to < 0 || from >= data.projects.length || to >= data.projects.length) return;
     const next = [...data.projects];
     const [moved] = next.splice(from, 1);
     next.splice(to, 0, moved);
-    save({ ...data, projects: next }, `Reordered project ${moved.name}`);
+    const items = next.map((p, i) => ({ id: p.id, order: i }));
+    setBusy(true);
+    try {
+      await adminPut("/api/projects/reorder", { items });
+      await refetch();
+      pushAdminToast("success", `Reordered project ${moved.name}`);
+    } catch (e) {
+      pushAdminToast("error", e instanceof Error ? e.message : "Failed to reorder");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const resetProjects = async () => {
+    if (!window.confirm("Reset all projects to built-in defaults? This replaces database content for this section.")) return;
+    setBusy(true);
+    try {
+      for (const p of data.projects) {
+        if (isMongoId(p.id)) await adminDelete(`/api/projects/${p.id}`);
+      }
+      for (const p of defaultPortfolioData.projects) {
+        await adminPost("/api/projects", { ...p, id: undefined });
+      }
+      await refetch();
+      pushAdminToast("success", "Reset projects to default");
+    } catch (e) {
+      pushAdminToast("error", e instanceof Error ? e.message : "Reset failed");
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
-        <button onClick={() => setEditing({ id: `p_${Date.now()}`, name: "", type: "Individual", shortDescription: "", longDescription: "", thumbnail: "", githubLink: "", liveDemoLink: "", techStack: [], featured: false })} style={{ borderRadius: 10, border: "1px solid rgba(79,142,247,0.35)", background: "rgba(79,142,247,0.15)", color: "#fff", padding: "8px 12px" }}>Add Project</button>
-        {resetButton(() => resetSection("projects"))}
+        <button
+          disabled={busy}
+          onClick={() =>
+            setEditing({
+              id: `p_${Date.now()}`,
+              name: "",
+              type: "Individual",
+              shortDescription: "",
+              longDescription: "",
+              thumbnail: "",
+              githubLink: "",
+              liveDemoLink: "",
+              techStack: [],
+              featured: false,
+            })
+          }
+          style={{ borderRadius: 10, border: "1px solid rgba(79,142,247,0.35)", background: "rgba(79,142,247,0.15)", color: "#fff", padding: "8px 12px" }}
+        >
+          Add Project
+        </button>
+        {resetButton(() => void resetProjects())}
       </div>
+      {!data.projects.length ? (
+        <div style={{ ...sectionCardStyle(), padding: 16, color: "rgba(255,255,255,0.55)" }}>No projects yet. Add one to get started.</div>
+      ) : null}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 12 }}>
         {data.projects.map((p, index) => (
           <div
@@ -362,31 +458,124 @@ function ProjectsPage() {
               </div>
               <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
                 <button onClick={() => setEditing(p)} style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.12)", background: "transparent", color: "#fff" }}>Edit</button>
-                <button onClick={() => window.confirm("Delete project?") && save({ ...data, projects: data.projects.filter((x) => x.id !== p.id) }, `Deleted project ${p.name}`)} style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid rgba(248,113,113,0.4)", background: "rgba(248,113,113,0.12)", color: "#fecaca" }}>Delete</button>
+                <button
+                  disabled={busy}
+                  onClick={() => {
+                    if (!window.confirm("Delete project?")) return;
+                    void (async () => {
+                      setBusy(true);
+                      try {
+                        await adminDelete(`/api/projects/${p.id}`);
+                        await refetch();
+                        pushAdminToast("success", `Deleted project ${p.name}`);
+                      } catch (e) {
+                        pushAdminToast("error", e instanceof Error ? e.message : "Delete failed");
+                      } finally {
+                        setBusy(false);
+                      }
+                    })();
+                  }}
+                  style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid rgba(248,113,113,0.4)", background: "rgba(248,113,113,0.12)", color: "#fecaca" }}
+                >
+                  Delete
+                </button>
               </div>
             </div>
           </div>
         ))}
       </div>
-      {editing ? <ProjectModal item={editing} onClose={() => setEditing(null)} onSave={(item) => {
-        const exists = data.projects.some((p) => p.id === item.id);
-        save({ ...data, projects: exists ? data.projects.map((p) => (p.id === item.id ? item : p)) : [item, ...data.projects] }, `${exists ? "Updated" : "Added"} project ${item.name}`);
-        setEditing(null);
-      }} /> : null}
+      {editing ? (
+        <ProjectModal
+          item={editing}
+          onClose={() => setEditing(null)}
+          onSave={async (item) => {
+            const exists = data.projects.some((p) => p.id === item.id);
+            const isCreate = !exists || !isMongoId(item.id);
+            try {
+              if (isCreate) {
+                await adminPost("/api/projects", item);
+                pushAdminToast("success", `Added project ${item.name}`);
+              } else {
+                await adminPut(`/api/projects/${item.id}`, item);
+                pushAdminToast("success", `Updated project ${item.name}`);
+              }
+              await refetch();
+              setEditing(null);
+            } catch (e) {
+              pushAdminToast("error", e instanceof Error ? e.message : "Save failed");
+            }
+          }}
+        />
+      ) : null}
     </div>
   );
 }
 
 function SkillsPage() {
-  const { data, save, resetSection, loading } = usePortfolioData();
+  const { data, loading, error, refetch } = usePortfolioData({ admin: true });
   const [editing, setEditing] = useState<SkillItem | null>(null);
+  const [busy, setBusy] = useState(false);
   if (loading) return <Skeleton />;
+  if (error) return <ErrorRetry message={error} onRetry={() => void refetch()} />;
+
+  const reorderSkills = async (next: SkillItem[]) => {
+    const items = next.map((s, i) => ({ id: s.id, order: i }));
+    setBusy(true);
+    try {
+      await adminPut("/api/skills/reorder", { items });
+      await refetch();
+    } catch (e) {
+      pushAdminToast("error", e instanceof Error ? e.message : "Reorder failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const resetSkills = async () => {
+    if (!window.confirm("Reset all skills to built-in defaults?")) return;
+    setBusy(true);
+    try {
+      for (const s of data.skills) {
+        if (isMongoId(s.id)) await adminDelete(`/api/skills/${s.id}`);
+      }
+      for (const s of defaultPortfolioData.skills) {
+        await adminPost("/api/skills", { ...s, id: undefined });
+      }
+      await refetch();
+      pushAdminToast("success", "Reset skills to default");
+    } catch (e) {
+      pushAdminToast("error", e instanceof Error ? e.message : "Reset failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
-        <button onClick={() => setEditing({ id: `s_${Date.now()}`, name: "", icon: "", category: "Tools", shortDescription: "", proficiency: "Intermediate", color: "#4F8EF7", size: "normal" })} style={{ borderRadius: 10, border: "1px solid rgba(79,142,247,0.35)", background: "rgba(79,142,247,0.15)", color: "#fff", padding: "8px 12px" }}>Add Skill</button>
-        {resetButton(() => resetSection("skills"))}
+        <button
+          disabled={busy}
+          onClick={() =>
+            setEditing({
+              id: `s_${Date.now()}`,
+              name: "",
+              icon: "",
+              category: "Tools",
+              shortDescription: "",
+              proficiency: "Intermediate",
+              color: "#4F8EF7",
+              size: "normal",
+            })
+          }
+          style={{ borderRadius: 10, border: "1px solid rgba(79,142,247,0.35)", background: "rgba(79,142,247,0.15)", color: "#fff", padding: "8px 12px" }}
+        >
+          Add Skill
+        </button>
+        {resetButton(() => void resetSkills())}
       </div>
+      {!data.skills.length ? (
+        <div style={{ ...sectionCardStyle(), padding: 16, color: "rgba(255,255,255,0.55)" }}>No skills yet.</div>
+      ) : null}
       <div style={{ display: "grid", gap: 10 }}>
         {data.skills.map((s, idx) => (
           <div key={s.id} style={{ ...sectionCardStyle(), padding: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -411,88 +600,387 @@ function SkillsPage() {
               </span>
             </div>
             <div style={{ display: "flex", gap: 6 }}>
-              <button onClick={() => idx > 0 && save({ ...data, skills: data.skills.map((x, i, arr) => (i === idx - 1 ? arr[idx] : i === idx ? arr[idx - 1] : x)) }, `Reordered skill ${s.name}`)}>↑</button>
-              <button onClick={() => idx < data.skills.length - 1 && save({ ...data, skills: data.skills.map((x, i, arr) => (i === idx + 1 ? arr[idx] : i === idx ? arr[idx + 1] : x)) }, `Reordered skill ${s.name}`)}>↓</button>
+              <button
+                disabled={busy || idx <= 0}
+                onClick={() => {
+                  if (idx <= 0) return;
+                  const next = data.skills.map((x, i, arr) => (i === idx - 1 ? arr[idx] : i === idx ? arr[idx - 1] : x));
+                  void reorderSkills(next);
+                }}
+              >
+                ↑
+              </button>
+              <button
+                disabled={busy || idx >= data.skills.length - 1}
+                onClick={() => {
+                  if (idx >= data.skills.length - 1) return;
+                  const next = data.skills.map((x, i, arr) => (i === idx + 1 ? arr[idx] : i === idx ? arr[idx + 1] : x));
+                  void reorderSkills(next);
+                }}
+              >
+                ↓
+              </button>
               <button onClick={() => setEditing(s)}>Edit</button>
-              <button onClick={() => window.confirm("Delete skill?") && save({ ...data, skills: data.skills.filter((x) => x.id !== s.id) }, `Deleted skill ${s.name}`)}>Delete</button>
+              <button
+                disabled={busy}
+                onClick={() => {
+                  if (!window.confirm("Delete skill?")) return;
+                  void (async () => {
+                    setBusy(true);
+                    try {
+                      await adminDelete(`/api/skills/${s.id}`);
+                      await refetch();
+                      pushAdminToast("success", `Deleted skill ${s.name}`);
+                    } catch (e) {
+                      pushAdminToast("error", e instanceof Error ? e.message : "Delete failed");
+                    } finally {
+                      setBusy(false);
+                    }
+                  })();
+                }}
+              >
+                Delete
+              </button>
             </div>
           </div>
         ))}
       </div>
-      {editing ? <SkillModal item={editing} onClose={() => setEditing(null)} onSave={(item) => {
-        const exists = data.skills.some((s) => s.id === item.id);
-        save({ ...data, skills: exists ? data.skills.map((s) => (s.id === item.id ? item : s)) : [item, ...data.skills] }, `${exists ? "Updated" : "Added"} skill ${item.name}`);
-        setEditing(null);
-      }} /> : null}
+      {editing ? (
+        <SkillModal
+          item={editing}
+          onClose={() => setEditing(null)}
+          onSave={async (item) => {
+            const exists = data.skills.some((sk) => sk.id === item.id);
+            const isCreate = !exists || !isMongoId(item.id);
+            try {
+              if (isCreate) {
+                await adminPost("/api/skills", item);
+                pushAdminToast("success", `Added skill ${item.name}`);
+              } else {
+                await adminPut(`/api/skills/${item.id}`, item);
+                pushAdminToast("success", `Updated skill ${item.name}`);
+              }
+              await refetch();
+              setEditing(null);
+            } catch (e) {
+              pushAdminToast("error", e instanceof Error ? e.message : "Save failed");
+            }
+          }}
+        />
+      ) : null}
     </div>
   );
 }
 
 function ExperiencePage() {
-  const { data, save, resetSection, loading } = usePortfolioData();
+  const { data, loading, error, refetch } = usePortfolioData({ admin: true });
   const [editing, setEditing] = useState<ExperienceItem | null>(null);
+  const [busy, setBusy] = useState(false);
   if (loading) return <Skeleton />;
+  if (error) return <ErrorRetry message={error} onRetry={() => void refetch()} />;
+
+  const reorderExp = async (next: ExperienceItem[]) => {
+    const items = next.map((x, i) => ({ id: x.id, order: i }));
+    setBusy(true);
+    try {
+      await adminPut("/api/experience/reorder", { items });
+      await refetch();
+    } catch (e) {
+      pushAdminToast("error", e instanceof Error ? e.message : "Reorder failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const resetExp = async () => {
+    if (!window.confirm("Reset experience entries to built-in defaults?")) return;
+    setBusy(true);
+    try {
+      for (const x of data.experiences) {
+        if (isMongoId(x.id)) await adminDelete(`/api/experience/${x.id}`);
+      }
+      for (const x of defaultPortfolioData.experiences) {
+        await adminPost("/api/experience", { ...x, id: undefined });
+      }
+      await refetch();
+      pushAdminToast("success", "Reset experience to default");
+    } catch (e) {
+      pushAdminToast("error", e instanceof Error ? e.message : "Reset failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
-        <button onClick={() => setEditing({ id: `e_${Date.now()}`, companyName: "", role: "", startDate: "", endDate: "", present: false, description: "", logo: "💼", side: "left" })} style={{ borderRadius: 10, border: "1px solid rgba(79,142,247,0.35)", background: "rgba(79,142,247,0.15)", color: "#fff", padding: "8px 12px" }}>Add Experience</button>
-        {resetButton(() => resetSection("experiences"))}
+        <button
+          disabled={busy}
+          onClick={() =>
+            setEditing({ id: `e_${Date.now()}`, companyName: "", role: "", startDate: "", endDate: "", present: false, description: "", logo: "💼", side: "left" })
+          }
+          style={{ borderRadius: 10, border: "1px solid rgba(79,142,247,0.35)", background: "rgba(79,142,247,0.15)", color: "#fff", padding: "8px 12px" }}
+        >
+          Add Experience
+        </button>
+        {resetButton(() => void resetExp())}
       </div>
+      {!data.experiences.length ? (
+        <div style={{ ...sectionCardStyle(), padding: 16, color: "rgba(255,255,255,0.55)" }}>No experience entries yet.</div>
+      ) : null}
       {data.experiences.map((e, idx) => (
         <div key={e.id} style={{ ...sectionCardStyle(), padding: 12, marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div>{e.logo} {e.companyName} — {e.role}</div>
+          <div>
+            {e.logo} {e.companyName} — {e.role}
+          </div>
           <div style={{ display: "flex", gap: 6 }}>
-            <button onClick={() => idx > 0 && save({ ...data, experiences: data.experiences.map((x, i, arr) => (i === idx - 1 ? arr[idx] : i === idx ? arr[idx - 1] : x)) }, `Reordered experience ${e.companyName}`)}>↑</button>
-            <button onClick={() => idx < data.experiences.length - 1 && save({ ...data, experiences: data.experiences.map((x, i, arr) => (i === idx + 1 ? arr[idx] : i === idx ? arr[idx + 1] : x)) }, `Reordered experience ${e.companyName}`)}>↓</button>
+            <button
+              disabled={busy || idx <= 0}
+              onClick={() => {
+                if (idx <= 0) return;
+                const next = data.experiences.map((x, i, arr) => (i === idx - 1 ? arr[idx] : i === idx ? arr[idx - 1] : x));
+                void reorderExp(next);
+              }}
+            >
+              ↑
+            </button>
+            <button
+              disabled={busy || idx >= data.experiences.length - 1}
+              onClick={() => {
+                if (idx >= data.experiences.length - 1) return;
+                const next = data.experiences.map((x, i, arr) => (i === idx + 1 ? arr[idx] : i === idx ? arr[idx + 1] : x));
+                void reorderExp(next);
+              }}
+            >
+              ↓
+            </button>
             <button onClick={() => setEditing(e)}>Edit</button>
-            <button onClick={() => window.confirm("Delete experience?") && save({ ...data, experiences: data.experiences.filter((x) => x.id !== e.id) }, `Deleted experience ${e.companyName}`)}>Delete</button>
+            <button
+              disabled={busy}
+              onClick={() => {
+                if (!window.confirm("Delete experience?")) return;
+                void (async () => {
+                  setBusy(true);
+                  try {
+                    await adminDelete(`/api/experience/${e.id}`);
+                    await refetch();
+                    pushAdminToast("success", `Deleted experience ${e.companyName}`);
+                  } catch (err) {
+                    pushAdminToast("error", err instanceof Error ? err.message : "Delete failed");
+                  } finally {
+                    setBusy(false);
+                  }
+                })();
+              }}
+            >
+              Delete
+            </button>
           </div>
         </div>
       ))}
-      {editing ? <ExperienceModal item={editing} onClose={() => setEditing(null)} onSave={(item) => {
-        const exists = data.experiences.some((x) => x.id === item.id);
-        save({ ...data, experiences: exists ? data.experiences.map((x) => (x.id === item.id ? item : x)) : [item, ...data.experiences] }, `${exists ? "Updated" : "Added"} experience ${item.companyName}`);
-        setEditing(null);
-      }} /> : null}
+      {editing ? (
+        <ExperienceModal
+          item={editing}
+          onClose={() => setEditing(null)}
+          onSave={async (item) => {
+            const exists = data.experiences.some((x) => x.id === item.id);
+            const isCreate = !exists || !isMongoId(item.id);
+            try {
+              if (isCreate) {
+                await adminPost("/api/experience", item);
+                pushAdminToast("success", `Added experience ${item.companyName}`);
+              } else {
+                await adminPut(`/api/experience/${item.id}`, item);
+                pushAdminToast("success", `Updated experience ${item.companyName}`);
+              }
+              await refetch();
+              setEditing(null);
+            } catch (err) {
+              pushAdminToast("error", err instanceof Error ? err.message : "Save failed");
+            }
+          }}
+        />
+      ) : null}
     </div>
   );
 }
 
 function EducationPage() {
-  const { data, save, resetSection, loading } = usePortfolioData();
+  const { data, loading, error, refetch } = usePortfolioData({ admin: true });
   const [editing, setEditing] = useState<EducationItem | null>(null);
+  const [busy, setBusy] = useState(false);
   if (loading) return <Skeleton />;
+  if (error) return <ErrorRetry message={error} onRetry={() => void refetch()} />;
+
+  const reorderEdu = async (next: EducationItem[]) => {
+    const items = next.map((x, i) => ({ id: x.id, order: i }));
+    setBusy(true);
+    try {
+      await adminPut("/api/education/reorder", { items });
+      await refetch();
+    } catch (e) {
+      pushAdminToast("error", e instanceof Error ? e.message : "Reorder failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const resetEdu = async () => {
+    if (!window.confirm("Reset education entries to built-in defaults?")) return;
+    setBusy(true);
+    try {
+      for (const x of data.education) {
+        if (isMongoId(x.id)) await adminDelete(`/api/education/${x.id}`);
+      }
+      for (const x of defaultPortfolioData.education) {
+        await adminPost("/api/education", { ...x, id: undefined });
+      }
+      await refetch();
+      pushAdminToast("success", "Reset education to default");
+    } catch (e) {
+      pushAdminToast("error", e instanceof Error ? e.message : "Reset failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
-        <button onClick={() => setEditing({ id: `ed_${Date.now()}`, institutionName: "", degree: "", startDate: "", endDate: "", present: false, description: "", logo: "🎓", side: "right" })} style={{ borderRadius: 10, border: "1px solid rgba(79,142,247,0.35)", background: "rgba(79,142,247,0.15)", color: "#fff", padding: "8px 12px" }}>Add Education</button>
-        {resetButton(() => resetSection("education"))}
+        <button
+          disabled={busy}
+          onClick={() =>
+            setEditing({ id: `ed_${Date.now()}`, institutionName: "", degree: "", startDate: "", endDate: "", present: false, description: "", logo: "🎓", side: "right" })
+          }
+          style={{ borderRadius: 10, border: "1px solid rgba(79,142,247,0.35)", background: "rgba(79,142,247,0.15)", color: "#fff", padding: "8px 12px" }}
+        >
+          Add Education
+        </button>
+        {resetButton(() => void resetEdu())}
       </div>
+      {!data.education.length ? (
+        <div style={{ ...sectionCardStyle(), padding: 16, color: "rgba(255,255,255,0.55)" }}>No education entries yet.</div>
+      ) : null}
       {data.education.map((e, idx) => (
         <div key={e.id} style={{ ...sectionCardStyle(), padding: 12, marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div>{e.logo} {e.institutionName}</div>
+          <div>
+            {e.logo} {e.institutionName}
+          </div>
           <div style={{ display: "flex", gap: 6 }}>
-            <button onClick={() => idx > 0 && save({ ...data, education: data.education.map((x, i, arr) => (i === idx - 1 ? arr[idx] : i === idx ? arr[idx - 1] : x)) }, `Reordered education ${e.institutionName}`)}>↑</button>
-            <button onClick={() => idx < data.education.length - 1 && save({ ...data, education: data.education.map((x, i, arr) => (i === idx + 1 ? arr[idx] : i === idx ? arr[idx + 1] : x)) }, `Reordered education ${e.institutionName}`)}>↓</button>
+            <button
+              disabled={busy || idx <= 0}
+              onClick={() => {
+                if (idx <= 0) return;
+                const next = data.education.map((x, i, arr) => (i === idx - 1 ? arr[idx] : i === idx ? arr[idx - 1] : x));
+                void reorderEdu(next);
+              }}
+            >
+              ↑
+            </button>
+            <button
+              disabled={busy || idx >= data.education.length - 1}
+              onClick={() => {
+                if (idx >= data.education.length - 1) return;
+                const next = data.education.map((x, i, arr) => (i === idx + 1 ? arr[idx] : i === idx ? arr[idx + 1] : x));
+                void reorderEdu(next);
+              }}
+            >
+              ↓
+            </button>
             <button onClick={() => setEditing(e)}>Edit</button>
-            <button onClick={() => window.confirm("Delete education?") && save({ ...data, education: data.education.filter((x) => x.id !== e.id) }, `Deleted education ${e.institutionName}`)}>Delete</button>
+            <button
+              disabled={busy}
+              onClick={() => {
+                if (!window.confirm("Delete education?")) return;
+                void (async () => {
+                  setBusy(true);
+                  try {
+                    await adminDelete(`/api/education/${e.id}`);
+                    await refetch();
+                    pushAdminToast("success", `Deleted education ${e.institutionName}`);
+                  } catch (err) {
+                    pushAdminToast("error", err instanceof Error ? err.message : "Delete failed");
+                  } finally {
+                    setBusy(false);
+                  }
+                })();
+              }}
+            >
+              Delete
+            </button>
           </div>
         </div>
       ))}
-      {editing ? <EducationModal item={editing} onClose={() => setEditing(null)} onSave={(item) => {
-        const exists = data.education.some((x) => x.id === item.id);
-        save({ ...data, education: exists ? data.education.map((x) => (x.id === item.id ? item : x)) : [item, ...data.education] }, `${exists ? "Updated" : "Added"} education ${item.institutionName}`);
-        setEditing(null);
-      }} /> : null}
+      {editing ? (
+        <EducationModal
+          item={editing}
+          onClose={() => setEditing(null)}
+          onSave={async (item) => {
+            const exists = data.education.some((x) => x.id === item.id);
+            const isCreate = !exists || !isMongoId(item.id);
+            try {
+              if (isCreate) {
+                await adminPost("/api/education", item);
+                pushAdminToast("success", `Added education ${item.institutionName}`);
+              } else {
+                await adminPut(`/api/education/${item.id}`, item);
+                pushAdminToast("success", `Updated education ${item.institutionName}`);
+              }
+              await refetch();
+              setEditing(null);
+            } catch (err) {
+              pushAdminToast("error", err instanceof Error ? err.message : "Save failed");
+            }
+          }}
+        />
+      ) : null}
     </div>
   );
 }
 
 function AboutPage() {
-  const { data, save, resetSection, loading } = usePortfolioData();
+  const { data, loading, error, refetch } = usePortfolioData({ admin: true });
   const [local, setLocal] = useState(data.about);
+  const [saving, setSaving] = useState(false);
   useEffect(() => setLocal(data.about), [data.about]);
   if (loading) return <Skeleton />;
+  if (error) return <ErrorRetry message={error} onRetry={() => void refetch()} />;
+
+  const saveAbout = async () => {
+    setSaving(true);
+    try {
+      await adminPut("/api/about", {
+        paragraphs: local.paragraphs,
+        badges: local.badges,
+        profilePhoto: local.profilePhoto,
+      });
+      await refetch();
+      pushAdminToast("success", "Updated About Me");
+    } catch (e) {
+      pushAdminToast("error", e instanceof Error ? e.message : "Save failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const resetAbout = async () => {
+    if (!window.confirm("Reset About section to built-in defaults?")) return;
+    setSaving(true);
+    try {
+      await adminPut("/api/about", {
+        paragraphs: defaultPortfolioData.about.paragraphs,
+        badges: defaultPortfolioData.about.badges,
+        profilePhoto: defaultPortfolioData.about.profilePhoto,
+      });
+      await refetch();
+      pushAdminToast("success", "Reset About to default");
+    } catch (e) {
+      pushAdminToast("error", e instanceof Error ? e.message : "Reset failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div style={{ ...sectionCardStyle(), padding: 16 }}>
       <textarea value={local.paragraphs[0] ?? ""} onChange={(e) => setLocal({ ...local, paragraphs: [e.target.value, local.paragraphs[1] ?? "", local.paragraphs[2] ?? ""] })} style={{ width: "100%", minHeight: 90, marginBottom: 8 }} />
@@ -517,18 +1005,50 @@ function AboutPage() {
         }} />
       </div>
       <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-        <button onClick={() => save({ ...data, about: local }, "Updated About Me")} style={{ padding: "8px 12px" }}>Save</button>
-        {resetButton(() => resetSection("about"))}
+        <button disabled={saving} onClick={() => void saveAbout()} style={{ padding: "8px 12px" }}>
+          {saving ? "Saving..." : "Save"}
+        </button>
+        {resetButton(() => void resetAbout())}
       </div>
     </div>
   );
 }
 
 function HeroPage() {
-  const { data, save, resetSection, loading } = usePortfolioData();
+  const { data, loading, error, refetch } = usePortfolioData({ admin: true });
   const [hero, setHero] = useState(data.hero);
+  const [saving, setSaving] = useState(false);
   useEffect(() => setHero(data.hero), [data.hero]);
   if (loading) return <Skeleton />;
+  if (error) return <ErrorRetry message={error} onRetry={() => void refetch()} />;
+
+  const saveHero = async () => {
+    setSaving(true);
+    try {
+      await adminPut("/api/hero", hero);
+      await refetch();
+      pushAdminToast("success", "Updated Hero section");
+    } catch (e) {
+      pushAdminToast("error", e instanceof Error ? e.message : "Save failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const resetHero = async () => {
+    if (!window.confirm("Reset Hero section to built-in defaults?")) return;
+    setSaving(true);
+    try {
+      await adminPut("/api/hero", defaultPortfolioData.hero);
+      await refetch();
+      pushAdminToast("success", "Reset Hero to default");
+    } catch (e) {
+      pushAdminToast("error", e instanceof Error ? e.message : "Reset failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
       <div style={{ ...sectionCardStyle(), padding: 16 }}>
@@ -544,32 +1064,66 @@ function HeroPage() {
           setHero({ ...hero, heroPhoto: await readAsBase64(f) });
         }} />
         <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-          <button onClick={() => save({ ...data, hero }, "Updated Hero section")}>Save</button>
-          {resetButton(() => resetSection("hero"))}
+          <button type="button" disabled={saving} onClick={() => void saveHero()}>
+            {saving ? "Saving..." : "Save"}
+          </button>
+          {resetButton(() => void resetHero())}
         </div>
       </div>
       <div style={{ ...sectionCardStyle(), padding: 16 }}>
         <h3>{hero.heading}</h3>
         <p>{hero.subHeading}</p>
-        <img src={hero.heroPhoto} style={{ width: 140, height: 140, objectFit: "cover", borderRadius: "50%" }} />
+        <img src={hero.heroPhoto} alt="" style={{ width: 140, height: 140, objectFit: "cover", borderRadius: "50%" }} />
       </div>
     </div>
   );
 }
 
 function ContactPage() {
-  const { data, save, resetSection, loading } = usePortfolioData();
+  const { data, loading, error, refetch } = usePortfolioData({ admin: true });
   const [contact, setContact] = useState(data.contact);
+  const [saving, setSaving] = useState(false);
   useEffect(() => setContact(data.contact), [data.contact]);
   if (loading) return <Skeleton />;
+  if (error) return <ErrorRetry message={error} onRetry={() => void refetch()} />;
+
+  const saveContact = async () => {
+    setSaving(true);
+    try {
+      await adminPut("/api/contact", contact);
+      await refetch();
+      pushAdminToast("success", "Updated Contact info");
+    } catch (e) {
+      pushAdminToast("error", e instanceof Error ? e.message : "Save failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const resetContact = async () => {
+    if (!window.confirm("Reset Contact section to built-in defaults?")) return;
+    setSaving(true);
+    try {
+      await adminPut("/api/contact", defaultPortfolioData.contact);
+      await refetch();
+      pushAdminToast("success", "Reset Contact to default");
+    } catch (e) {
+      pushAdminToast("error", e instanceof Error ? e.message : "Reset failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div style={{ ...sectionCardStyle(), padding: 16 }}>
       {(["email", "whatsapp", "linkedin", "github", "phone", "heading", "description"] as const).map((k) => (
         <input key={k} value={contact[k]} onChange={(e) => setContact({ ...contact, [k]: e.target.value })} style={{ width: "100%", marginBottom: 8 }} />
       ))}
       <div style={{ display: "flex", gap: 8 }}>
-        <button onClick={() => save({ ...data, contact }, "Updated Contact info")}>Save</button>
-        {resetButton(() => resetSection("contact"))}
+        <button type="button" disabled={saving} onClick={() => void saveContact()}>
+          {saving ? "Saving..." : "Save"}
+        </button>
+        {resetButton(() => void resetContact())}
       </div>
     </div>
   );
@@ -586,7 +1140,15 @@ function BaseModal({ children, onClose }: { children: React.ReactNode; onClose: 
   );
 }
 
-function ProjectModal({ item, onClose, onSave }: { item: ProjectItem; onClose: () => void; onSave: (item: ProjectItem) => void }) {
+function ProjectModal({
+  item,
+  onClose,
+  onSave,
+}: {
+  item: ProjectItem;
+  onClose: () => void;
+  onSave: (item: ProjectItem) => void | Promise<void>;
+}) {
   const [state, setState] = useState<ProjectItem>({ ...item, extraImages: item.extraImages ?? [] });
   const [stackInput, setStackInput] = useState("");
   const [stack, setStack] = useState<string[]>(item.techStack);
@@ -644,11 +1206,11 @@ function ProjectModal({ item, onClose, onSave }: { item: ProjectItem; onClose: (
     return Object.keys(nextErrors).length === 0;
   };
 
-  const submit = () => {
+  const submit = async () => {
     if (!validate()) return;
+    setSaving(true);
     try {
-      setSaving(true);
-      onSave({ ...state, techStack: stack });
+      await Promise.resolve(onSave({ ...state, techStack: stack }));
     } finally {
       setSaving(false);
     }
@@ -1320,8 +1882,25 @@ function ProjectModal({ item, onClose, onSave }: { item: ProjectItem; onClose: (
   );
 }
 
-function SkillModal({ item, onClose, onSave }: { item: SkillItem; onClose: () => void; onSave: (item: SkillItem) => void }) {
+function SkillModal({
+  item,
+  onClose,
+  onSave,
+}: {
+  item: SkillItem;
+  onClose: () => void;
+  onSave: (item: SkillItem) => void | Promise<void>;
+}) {
   const [state, setState] = useState(item);
+  const [saving, setSaving] = useState(false);
+  const submit = async () => {
+    setSaving(true);
+    try {
+      await Promise.resolve(onSave(state));
+    } finally {
+      setSaving(false);
+    }
+  };
   return (
     <BaseModal onClose={onClose}>
       <input value={state.name} onChange={(e) => setState({ ...state, name: e.target.value })} placeholder="Skill Name" style={{ width: "100%", marginBottom: 8 }} />
@@ -1333,47 +1912,99 @@ function SkillModal({ item, onClose, onSave }: { item: SkillItem; onClose: () =>
       <select value={state.proficiency} onChange={(e) => setState({ ...state, proficiency: e.target.value as SkillItem["proficiency"] })} style={{ width: "100%", marginBottom: 8 }}>
         <option>Beginner</option><option>Intermediate</option><option>Advanced</option>
       </select>
-      <button onClick={() => onSave(state)}>Save</button>
+      <button type="button" disabled={saving} onClick={() => void submit()}>
+        {saving ? "Saving..." : "Save"}
+      </button>
     </BaseModal>
   );
 }
 
-function ExperienceModal({ item, onClose, onSave }: { item: ExperienceItem; onClose: () => void; onSave: (item: ExperienceItem) => void }) {
+function ExperienceModal({
+  item,
+  onClose,
+  onSave,
+}: {
+  item: ExperienceItem;
+  onClose: () => void;
+  onSave: (item: ExperienceItem) => void | Promise<void>;
+}) {
   const [state, setState] = useState(item);
+  const [saving, setSaving] = useState(false);
+  const submit = async () => {
+    setSaving(true);
+    try {
+      await Promise.resolve(onSave(state));
+    } finally {
+      setSaving(false);
+    }
+  };
   return (
     <BaseModal onClose={onClose}>
       <input value={state.companyName} onChange={(e) => setState({ ...state, companyName: e.target.value })} placeholder="Company Name" style={{ width: "100%", marginBottom: 8 }} />
       <input value={state.role} onChange={(e) => setState({ ...state, role: e.target.value })} placeholder="Role" style={{ width: "100%", marginBottom: 8 }} />
       <input value={state.startDate} onChange={(e) => setState({ ...state, startDate: e.target.value })} placeholder="Start Date" style={{ width: "100%", marginBottom: 8 }} />
       <input value={state.endDate} onChange={(e) => setState({ ...state, endDate: e.target.value })} placeholder="End Date" style={{ width: "100%", marginBottom: 8 }} />
-      <label style={{ display: "block", marginBottom: 8 }}><input type="checkbox" checked={state.present} onChange={(e) => setState({ ...state, present: e.target.checked })} /> Present</label>
+      <label style={{ display: "block", marginBottom: 8 }}>
+        <input type="checkbox" checked={state.present} onChange={(e) => setState({ ...state, present: e.target.checked })} /> Present
+      </label>
       <textarea value={state.description} onChange={(e) => setState({ ...state, description: e.target.value })} placeholder="Description" style={{ width: "100%", minHeight: 80, marginBottom: 8 }} />
-      <input type="file" accept="image/*" onChange={async (e) => {
-        const f = e.target.files?.[0];
-        if (!f) return;
-        setState({ ...state, logo: await readAsBase64(f) });
-      }} />
-      <button onClick={() => onSave(state)} style={{ marginTop: 10 }}>Save</button>
+      <input
+        type="file"
+        accept="image/*"
+        onChange={async (e) => {
+          const f = e.target.files?.[0];
+          if (!f) return;
+          setState({ ...state, logo: await readAsBase64(f) });
+        }}
+      />
+      <button type="button" disabled={saving} onClick={() => void submit()} style={{ marginTop: 10 }}>
+        {saving ? "Saving..." : "Save"}
+      </button>
     </BaseModal>
   );
 }
 
-function EducationModal({ item, onClose, onSave }: { item: EducationItem; onClose: () => void; onSave: (item: EducationItem) => void }) {
+function EducationModal({
+  item,
+  onClose,
+  onSave,
+}: {
+  item: EducationItem;
+  onClose: () => void;
+  onSave: (item: EducationItem) => void | Promise<void>;
+}) {
   const [state, setState] = useState(item);
+  const [saving, setSaving] = useState(false);
+  const submit = async () => {
+    setSaving(true);
+    try {
+      await Promise.resolve(onSave(state));
+    } finally {
+      setSaving(false);
+    }
+  };
   return (
     <BaseModal onClose={onClose}>
       <input value={state.institutionName} onChange={(e) => setState({ ...state, institutionName: e.target.value })} placeholder="Institution Name" style={{ width: "100%", marginBottom: 8 }} />
       <input value={state.degree} onChange={(e) => setState({ ...state, degree: e.target.value })} placeholder="Degree" style={{ width: "100%", marginBottom: 8 }} />
       <input value={state.startDate} onChange={(e) => setState({ ...state, startDate: e.target.value })} placeholder="Start Date" style={{ width: "100%", marginBottom: 8 }} />
       <input value={state.endDate} onChange={(e) => setState({ ...state, endDate: e.target.value })} placeholder="End Date" style={{ width: "100%", marginBottom: 8 }} />
-      <label style={{ display: "block", marginBottom: 8 }}><input type="checkbox" checked={state.present} onChange={(e) => setState({ ...state, present: e.target.checked })} /> Present</label>
+      <label style={{ display: "block", marginBottom: 8 }}>
+        <input type="checkbox" checked={state.present} onChange={(e) => setState({ ...state, present: e.target.checked })} /> Present
+      </label>
       <textarea value={state.description} onChange={(e) => setState({ ...state, description: e.target.value })} placeholder="Description" style={{ width: "100%", minHeight: 80, marginBottom: 8 }} />
-      <input type="file" accept="image/*" onChange={async (e) => {
-        const f = e.target.files?.[0];
-        if (!f) return;
-        setState({ ...state, logo: await readAsBase64(f) });
-      }} />
-      <button onClick={() => onSave(state)} style={{ marginTop: 10 }}>Save</button>
+      <input
+        type="file"
+        accept="image/*"
+        onChange={async (e) => {
+          const f = e.target.files?.[0];
+          if (!f) return;
+          setState({ ...state, logo: await readAsBase64(f) });
+        }}
+      />
+      <button type="button" disabled={saving} onClick={() => void submit()} style={{ marginTop: 10 }}>
+        {saving ? "Saving..." : "Save"}
+      </button>
     </BaseModal>
   );
 }

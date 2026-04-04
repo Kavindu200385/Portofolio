@@ -1,3 +1,5 @@
+"use client";
+
 import { useRef } from "react";
 import { motion, useInView } from "motion/react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
@@ -6,7 +8,14 @@ import { usePortfolioData } from "../data/portfolioData";
 export function KaviAbout() {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-100px" });
-  const { data } = usePortfolioData();
+  const { data, loading } = usePortfolioData();
+  if (loading) {
+    return (
+      <section id="about" style={{ padding: "120px 24px", maxWidth: "1200px", margin: "0 auto", color: "rgba(255,255,255,0.35)" }}>
+        Loading…
+      </section>
+    );
+  }
   const PROFILE_IMG = data.about.profilePhoto;
   const bioLines = data.about.paragraphs;
   const tags = data.about.badges;
