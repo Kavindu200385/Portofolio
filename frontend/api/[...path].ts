@@ -3,6 +3,7 @@
  * Single Vercel serverless function for all /api/* routes (Hobby plan: max 12 functions).
  * Helpers live in ../lib/api/* (not under /api, so they are not separate functions).
  */
+import mongoose from "mongoose";
 import { connectDB } from "../lib/mongodb";
 import { apiPathSegments, requireAdmin } from "../lib/api/helpers";
 import { normalizeProjectBody } from "../lib/api/projectBody";
@@ -24,6 +25,33 @@ export default async function handler(req: any, res: any) {
   const method = req.method || "GET";
 
   try {
+    // —— Health (for Atlas / env debugging; no DB write required) ——
+    if (seg[0] === "health" && seg.length === 1 && method === "GET") {
+      if (!process.env.MONGODB_URI) {
+        return res.status(503).json({
+          ok: false,
+          mongodbUriConfigured: false,
+          message: "MONGODB_URI is not set. Add it to .env.local for vercel dev, or to Vercel project env.",
+        });
+      }
+      try {
+        await connectDB();
+        return res.status(200).json({
+          ok: true,
+          mongodbUriConfigured: true,
+          databaseName: mongoose.connection?.db?.databaseName ?? null,
+          message:
+            "Connected. In Atlas → Browse Collections, open this database name. It appears only after the first write (e.g. seed or create a document).",
+        });
+      } catch (e) {
+        return res.status(503).json({
+          ok: false,
+          mongodbUriConfigured: true,
+          message: e?.message || String(e),
+        });
+      }
+    }
+
     await connectDB();
 
     // —— Admin: seed built-in defaults only into empty collections (never deletes) ——
