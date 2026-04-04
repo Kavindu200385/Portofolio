@@ -98,14 +98,6 @@ export function KaviContact() {
   const EMAIL = data.contact.email;
   const PHONE = data.contact.phone;
 
-  if (loading) {
-    return (
-      <section id="contact" style={{ padding: "120px 24px", position: "relative", color: "rgba(255,255,255,0.35)" }}>
-        Loading contact…
-      </section>
-    );
-  }
-
   const copyEmail = async () => {
     try {
       await navigator.clipboard.writeText(EMAIL);
@@ -129,6 +121,8 @@ export function KaviContact() {
         padding: "120px 24px",
         position: "relative",
         overflow: "hidden",
+        opacity: loading ? 0.92 : 1,
+        transition: "opacity 0.35s ease",
       }}
     >
       {/* Animated background orbs */}

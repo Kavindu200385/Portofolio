@@ -13,11 +13,27 @@ function joinMonthYear(month?: string, year?: string) {
   return [month, year].filter(Boolean).join(" ").trim();
 }
 
+const PROJECT_TYPES: ProjectType[] = ["Individual", "Group", "Research"];
+const SKILL_CATEGORIES: SkillItem["category"][] = ["Frontend", "Backend", "DevOps", "Tools"];
+const PROFICIENCIES: SkillItem["proficiency"][] = ["Beginner", "Intermediate", "Advanced"];
+
+function asProjectType(v: unknown): ProjectType {
+  return PROJECT_TYPES.includes(v as ProjectType) ? (v as ProjectType) : "Individual";
+}
+
+function asSkillCategory(v: unknown): SkillItem["category"] {
+  return SKILL_CATEGORIES.includes(v as SkillItem["category"]) ? (v as SkillItem["category"]) : "Tools";
+}
+
+function asProficiency(v: unknown): SkillItem["proficiency"] {
+  return PROFICIENCIES.includes(v as SkillItem["proficiency"]) ? (v as SkillItem["proficiency"]) : "Intermediate";
+}
+
 export function mapProjectFromApi(doc: Record<string, unknown>): ProjectItem {
   return {
     id: String(doc._id),
     name: String(doc.name ?? ""),
-    type: (doc.category as ProjectType) ?? "Individual",
+    type: asProjectType(doc.category),
     shortDescription: String(doc.shortDescription ?? ""),
     longDescription: String(doc.description ?? ""),
     thumbnail: String(doc.mainPhoto ?? ""),
@@ -34,9 +50,9 @@ export function mapSkillFromApi(doc: Record<string, unknown>): SkillItem {
     id: String(doc._id),
     name: String(doc.name ?? ""),
     icon: String(doc.icon ?? ""),
-    category: doc.category as SkillItem["category"],
+    category: asSkillCategory(doc.category),
     shortDescription: String(doc.description ?? ""),
-    proficiency: doc.proficiency as SkillItem["proficiency"],
+    proficiency: asProficiency(doc.proficiency),
     color: String(doc.color ?? "#4F8EF7"),
     size: doc.size === "wide" ? "wide" : "normal",
   };

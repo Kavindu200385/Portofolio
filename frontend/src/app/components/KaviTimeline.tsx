@@ -262,21 +262,16 @@ export function KaviTimeline() {
     description: item.description,
   }));
 
-  if (loading) {
-    return (
-      <section id="timeline" style={{ padding: "120px 24px", position: "relative" }}>
-        <div style={{ maxWidth: "1100px", margin: "0 auto", color: "rgba(255,255,255,0.35)", fontFamily: "'Inter', sans-serif" }}>
-          Loading journey…
-        </div>
-      </section>
-    );
-  }
-
   return (
     <section
       id="timeline"
       ref={ref}
-      style={{ padding: "120px 24px", position: "relative" }}
+      style={{
+        padding: "120px 24px",
+        position: "relative",
+        opacity: loading ? 0.92 : 1,
+        transition: "opacity 0.35s ease",
+      }}
     >
       <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
         <SectionLabel label="Experience & Education" delay={0} inView={inView} />

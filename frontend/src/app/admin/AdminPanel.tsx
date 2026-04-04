@@ -258,7 +258,7 @@ function LoginPage() {
 }
 
 function DashboardPage() {
-  const { data, loading, error, refetch } = usePortfolioData({ admin: true });
+  const { data, loading, error, refetch } = usePortfolioData();
   if (loading) return <Skeleton />;
   if (error) return <ErrorRetry message={error} onRetry={() => void refetch()} />;
   const stats = [
@@ -327,7 +327,7 @@ function resetButton(onClick: () => void) {
 }
 
 function ProjectsPage() {
-  const { data, loading, error, refetch } = usePortfolioData({ admin: true });
+  const { data, loading, error, refetch } = usePortfolioData();
   const [editing, setEditing] = useState<ProjectItem | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
@@ -512,7 +512,7 @@ function ProjectsPage() {
 }
 
 function SkillsPage() {
-  const { data, loading, error, refetch } = usePortfolioData({ admin: true });
+  const { data, loading, error, refetch } = usePortfolioData();
   const [editing, setEditing] = useState<SkillItem | null>(null);
   const [busy, setBusy] = useState(false);
   if (loading) return <Skeleton />;
@@ -673,7 +673,7 @@ function SkillsPage() {
 }
 
 function ExperiencePage() {
-  const { data, loading, error, refetch } = usePortfolioData({ admin: true });
+  const { data, loading, error, refetch } = usePortfolioData();
   const [editing, setEditing] = useState<ExperienceItem | null>(null);
   const [busy, setBusy] = useState(false);
   if (loading) return <Skeleton />;
@@ -806,7 +806,7 @@ function ExperiencePage() {
 }
 
 function EducationPage() {
-  const { data, loading, error, refetch } = usePortfolioData({ admin: true });
+  const { data, loading, error, refetch } = usePortfolioData();
   const [editing, setEditing] = useState<EducationItem | null>(null);
   const [busy, setBusy] = useState(false);
   if (loading) return <Skeleton />;
@@ -939,7 +939,7 @@ function EducationPage() {
 }
 
 function AboutPage() {
-  const { data, loading, error, refetch } = usePortfolioData({ admin: true });
+  const { data, loading, error, refetch } = usePortfolioData();
   const [local, setLocal] = useState(data.about);
   const [saving, setSaving] = useState(false);
   useEffect(() => setLocal(data.about), [data.about]);
@@ -1015,7 +1015,7 @@ function AboutPage() {
 }
 
 function HeroPage() {
-  const { data, loading, error, refetch } = usePortfolioData({ admin: true });
+  const { data, loading, error, refetch } = usePortfolioData();
   const [hero, setHero] = useState(data.hero);
   const [saving, setSaving] = useState(false);
   useEffect(() => setHero(data.hero), [data.hero]);
@@ -1080,7 +1080,7 @@ function HeroPage() {
 }
 
 function ContactPage() {
-  const { data, loading, error, refetch } = usePortfolioData({ admin: true });
+  const { data, loading, error, refetch } = usePortfolioData();
   const [contact, setContact] = useState(data.contact);
   const [saving, setSaving] = useState(false);
   useEffect(() => setContact(data.contact), [data.contact]);

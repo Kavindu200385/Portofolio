@@ -215,19 +215,11 @@ export function KaviWorks() {
     ...data.projects.filter((p) => !p.featured),
   ];
 
-  if (loading) {
-    return (
-      <section id="works" style={{ padding: "120px 24px" }}>
-        <div style={{ maxWidth: "1200px", margin: "0 auto", color: "rgba(255,255,255,0.35)" }}>Loading works…</div>
-      </section>
-    );
-  }
-
   return (
     <section
       id="works"
       ref={ref}
-      style={{ padding: "120px 24px" }}
+      style={{ padding: "120px 24px", opacity: loading ? 0.92 : 1, transition: "opacity 0.35s ease" }}
     >
       <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
         <SectionLabel label="Selected Works" delay={0} inView={inView} />

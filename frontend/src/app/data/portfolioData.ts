@@ -1,4 +1,14 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  createElement,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import { useLocation } from "react-router";
 import {
   mapAboutFromApi,
   mapContactFromApi,
@@ -616,12 +626,24 @@ export function clearAdminToken() {
 }
 
 export type UsePortfolioOptions = {
-  /** When true, empty API responses stay empty (admin). When false, defaults fill empty sections (public site). */
+  /** @deprecated Route (/admin/*) determines admin vs public; option is ignored. */
   admin?: boolean;
 };
 
-export function usePortfolioData(opts?: UsePortfolioOptions) {
-  const admin = !!opts?.admin;
+type PortfolioContextValue = {
+  data: PortfolioData;
+  loading: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
+};
+
+const PortfolioDataContext = createContext<PortfolioContextValue | null>(null);
+
+/** Single source of portfolio API state for the whole app (avoids duplicate fetches and empty sections). */
+export function PortfolioDataProvider({ children }: { children: ReactNode }) {
+  const { pathname } = useLocation();
+  const admin = pathname.startsWith("/admin");
+
   const [data, setData] = useState<PortfolioData>(() => ({
     ...defaultPortfolioData,
     changesLog: [],
@@ -650,16 +672,27 @@ export function usePortfolioData(opts?: UsePortfolioOptions) {
     void refetch();
   }, [refetch]);
 
-  const api = useMemo(
-    () => ({
-      loading,
-      error,
-      data,
-      refetch,
-      pushAdminToast,
-    }),
-    [loading, error, data, refetch],
+  const value = useMemo(
+    () => ({ data, loading, error, refetch }),
+    [data, loading, error, refetch],
   );
 
-  return api;
+  return createElement(PortfolioDataContext.Provider, { value }, children);
+}
+
+export function usePortfolioData(_opts?: UsePortfolioOptions) {
+  const ctx = useContext(PortfolioDataContext);
+  if (!ctx) {
+    throw new Error("usePortfolioData must be used within PortfolioDataProvider");
+  }
+  return useMemo(
+    () => ({
+      loading: ctx.loading,
+      error: ctx.error,
+      data: ctx.data,
+      refetch: ctx.refetch,
+      pushAdminToast,
+    }),
+    [ctx.data, ctx.loading, ctx.error, ctx.refetch],
+  );
 }

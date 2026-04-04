@@ -106,19 +106,16 @@ export function KaviSkills() {
   const { data, loading } = usePortfolioData();
   const skills = data.skills;
 
-  if (loading) {
-    return (
-      <section id="skills" style={{ padding: "120px 24px", background: "rgba(14,14,28,0.5)" }}>
-        <div style={{ maxWidth: "1100px", margin: "0 auto", color: "rgba(255,255,255,0.35)" }}>Loading skills…</div>
-      </section>
-    );
-  }
-
   return (
     <section
       id="skills"
       ref={ref}
-      style={{ padding: "120px 24px", background: "rgba(14,14,28,0.5)" }}
+      style={{
+        padding: "120px 24px",
+        background: "rgba(14,14,28,0.5)",
+        opacity: loading ? 0.92 : 1,
+        transition: "opacity 0.35s ease",
+      }}
     >
       <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
         <SectionLabel label="Capabilities" delay={0} inView={inView} />

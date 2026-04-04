@@ -11,10 +11,17 @@ export function requireAdmin(req: any, res: any): boolean {
   return true;
 }
 
-/** Path segments after /api (no leading/trailing slashes). */
+/** Path segments after /api (no leading/trailing slashes). Works with relative or absolute req.url (Vercel). */
 export function apiPathSegments(req: any): string[] {
-  const raw = String(req.url || "/").split("?")[0];
-  return raw
+  let path = String(req.url || "/").split("?")[0];
+  try {
+    if (path.startsWith("http://") || path.startsWith("https://")) {
+      path = new URL(path).pathname;
+    }
+  } catch {
+    /* keep path */
+  }
+  return path
     .replace(/^\/api\/?/i, "")
     .split("/")
     .filter(Boolean);

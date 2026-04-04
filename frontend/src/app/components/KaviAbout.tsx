@@ -9,13 +9,6 @@ export function KaviAbout() {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-100px" });
   const { data, loading } = usePortfolioData();
-  if (loading) {
-    return (
-      <section id="about" style={{ padding: "120px 24px", maxWidth: "1200px", margin: "0 auto", color: "rgba(255,255,255,0.35)" }}>
-        Loading…
-      </section>
-    );
-  }
   const PROFILE_IMG = data.about.profilePhoto;
   const bioLines = data.about.paragraphs;
   const tags = data.about.badges;
@@ -28,6 +21,8 @@ export function KaviAbout() {
         padding: "120px 24px",
         maxWidth: "1200px",
         margin: "0 auto",
+        opacity: loading ? 0.92 : 1,
+        transition: "opacity 0.35s ease",
       }}
     >
       {/* Section label */}

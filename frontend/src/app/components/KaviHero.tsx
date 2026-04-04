@@ -79,33 +79,17 @@ function AuroraBlob({
 
 export function KaviHero() {
   const { data, loading } = usePortfolioData();
-  if (loading) {
-    return (
-      <section
-        id="intro"
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "100px 24px 60px",
-          color: "rgba(255,255,255,0.35)",
-          fontFamily: "'Inter', sans-serif",
-        }}
-      >
-        Loading…
-      </section>
-    );
-  }
   const HEADING = data.hero.heading;
   const PROFILE_IMG = data.hero.heroPhoto;
-  const cta1IsAnchor = data.hero.cta1Link.startsWith("#");
+  const cta1Link = data.hero.cta1Link || "";
+  const cta2Link = data.hero.cta2Link || "";
+  const cta1IsAnchor = cta1Link.startsWith("#");
   const cta1Click = () => {
     if (!cta1IsAnchor) {
-      window.location.href = data.hero.cta1Link;
+      if (cta1Link) window.location.href = cta1Link;
       return;
     }
-    document.getElementById(data.hero.cta1Link.replace("#", ""))?.scrollIntoView({ behavior: "smooth" });
+    document.getElementById(cta1Link.replace("#", ""))?.scrollIntoView({ behavior: "smooth" });
   };
   return (
     <section
@@ -117,6 +101,8 @@ export function KaviHero() {
         position: "relative",
         overflow: "hidden",
         padding: "100px 24px 60px",
+        opacity: loading ? 0.9 : 1,
+        transition: "opacity 0.35s ease",
       }}
     >
       {/* Aurora background */}
@@ -269,7 +255,7 @@ export function KaviHero() {
             >
               {data.hero.cta1Label}
             </GradientButton>
-            <OutlineButton href={data.hero.cta2Link}>{data.hero.cta2Label}</OutlineButton>
+            <OutlineButton href={cta2Link || "#"}>{data.hero.cta2Label}</OutlineButton>
           </motion.div>
 
           {/* Stats */}
