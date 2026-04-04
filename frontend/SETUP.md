@@ -1,5 +1,7 @@
 # MongoDB Atlas & environment setup
 
+All HTTP routes under `/api/*` are handled by **one** Vercel Serverless Function (`api/[...path].ts`) so deployments stay within the **Hobby plan limit** (12 functions per deployment). Shared logic lives in `lib/api/` and is bundled into that function—not deployed as separate functions.
+
 1. Go to [mongodb.com/atlas](https://www.mongodb.com/atlas) and create a free account.
 2. Create a free **M0** cluster.
 3. Create a **database user** with a password.

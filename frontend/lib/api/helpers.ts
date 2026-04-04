@@ -11,8 +11,11 @@ export function requireAdmin(req: any, res: any): boolean {
   return true;
 }
 
-export function getId(req: any): string | undefined {
-  const q = req.query?.id ?? req.query?.slug;
-  if (Array.isArray(q)) return q[0];
-  return q as string | undefined;
+/** Path segments after /api (no leading/trailing slashes). */
+export function apiPathSegments(req: any): string[] {
+  const raw = String(req.url || "/").split("?")[0];
+  return raw
+    .replace(/^\/api\/?/i, "")
+    .split("/")
+    .filter(Boolean);
 }
