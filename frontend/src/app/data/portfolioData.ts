@@ -111,20 +111,10 @@ export type PortfolioData = {
   changesLog: string[];
 };
 
-const TOKEN_KEY = "admin_auth_token_v1";
-export const TOAST_EVENT = "portfolio-admin-toast";
-
-const ADMIN_TOKEN_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
-
 export const defaultPortfolioData: PortfolioData = {
   ...(defaultPortfolioContent as unknown as Omit<PortfolioData, "changesLog">),
   changesLog: [],
 };
-
-export function pushAdminToast(type: "success" | "error", message: string) {
-  if (typeof window === "undefined") return;
-  window.dispatchEvent(new CustomEvent(TOAST_EVENT, { detail: { type, message } }));
-}
 
 async function fetchJsonLoose(path: string): Promise<unknown> {
   try {
@@ -140,8 +130,7 @@ async function fetchJsonLoose(path: string): Promise<unknown> {
 }
 
 /**
- * Merges API payloads with built-in defaults. Public site and admin use the same fallbacks when
- * the database is empty so the CMS always shows the same content visitors see.
+ * Merges API payloads with built-in defaults when the database is empty or an endpoint fails.
  */
 function buildPortfolioData(
   rawProjects: unknown,
@@ -279,42 +268,6 @@ export async function loadPortfolioFromApi(): Promise<PortfolioData> {
   return buildPortfolioData(rawProjects, rawSkills, rawExp, rawEdu, rawAbout, rawHero, rawContact);
 }
 
-export function getAdminToken() {
-  if (typeof window === "undefined") return null;
-  const raw = localStorage.getItem(TOKEN_KEY);
-  if (!raw) return null;
-  try {
-    const parsed = JSON.parse(raw) as { value?: string; issuedAt?: number } | null;
-    if (parsed && typeof parsed.issuedAt === "number" && parsed.value) {
-      const age = Date.now() - parsed.issuedAt;
-      if (age > ADMIN_TOKEN_MAX_AGE_MS) {
-        localStorage.removeItem(TOKEN_KEY);
-        return null;
-      }
-      return parsed.value;
-    }
-  } catch {
-    // legacy plain-string token, fall through
-  }
-  return raw;
-}
-
-export function setAdminToken(token: string) {
-  if (typeof window === "undefined") return;
-  const wrapped = { value: token, issuedAt: Date.now() };
-  localStorage.setItem(TOKEN_KEY, JSON.stringify(wrapped));
-}
-
-export function clearAdminToken() {
-  if (typeof window === "undefined") return;
-  localStorage.removeItem(TOKEN_KEY);
-}
-
-export type UsePortfolioOptions = {
-  /** @deprecated Route (/admin/*) determines admin vs public; option is ignored. */
-  admin?: boolean;
-};
-
 type PortfolioContextValue = {
   data: PortfolioData;
   loading: boolean;
@@ -360,7 +313,7 @@ export function PortfolioDataProvider({ children }: { children: ReactNode }) {
   return createElement(PortfolioDataContext.Provider, { value }, children);
 }
 
-export function usePortfolioData(_opts?: UsePortfolioOptions) {
+export function usePortfolioData() {
   const ctx = useContext(PortfolioDataContext);
   if (!ctx) {
     throw new Error("usePortfolioData must be used within PortfolioDataProvider");
@@ -371,7 +324,6 @@ export function usePortfolioData(_opts?: UsePortfolioOptions) {
       error: ctx.error,
       data: ctx.data,
       refetch: ctx.refetch,
-      pushAdminToast,
     }),
     [ctx.data, ctx.loading, ctx.error, ctx.refetch],
   );

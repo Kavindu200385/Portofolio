@@ -1,5 +1,5 @@
 /**
- * Built-in portfolio content (same as public fallbacks). Used by the client and by POST /api/admin/seed-defaults.
+ * Built-in portfolio content (same as public fallbacks when the API is empty).
  * Do not strip: this is the source of truth when the database is empty.
  */
 export const defaultPortfolioContent = {

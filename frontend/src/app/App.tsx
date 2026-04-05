@@ -10,7 +10,6 @@ import { KaviSkills } from "./components/KaviSkills";
 import { KaviWorks } from "./components/KaviWorks";
 import { KaviContact } from "./components/KaviContact";
 import { KaviFooter } from "./components/KaviFooter";
-import { AdminRoutes, DevAdminFloatingButton } from "./admin/AdminPanel";
 
 function PortfolioPage() {
   return (
@@ -151,7 +150,6 @@ function PortfolioPage() {
       </main>
 
       <KaviFooter />
-      <DevAdminFloatingButton />
     </>
   );
 }
@@ -161,7 +159,6 @@ export default function App() {
     <PortfolioDataProvider>
       <Routes>
         <Route path="/" element={<PortfolioPage />} />
-        <Route path="/admin/*" element={<AdminRoutes />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </PortfolioDataProvider>

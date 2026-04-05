@@ -16,7 +16,7 @@ import {
   SiTailwindcss,
 } from "react-icons/si";
 
-/** Built-in brand logos keyed by `SkillItem.id` (defaults + admin clones). */
+/** Built-in brand logos keyed by `SkillItem.id`. */
 const ICON_BY_ID: Record<string, IconType> = {
   "s-github": SiGithub,
   "s-gha": SiGithubactions,
@@ -34,7 +34,7 @@ const ICON_BY_ID: Record<string, IconType> = {
   "s-python": SiPython,
 };
 
-/** Match by normalized skill name when `id` is not a built-in (e.g. admin-added). */
+/** Match by normalized skill name when `id` is not a built-in. */
 const ICON_BY_NAME: Record<string, IconType> = {
   github: SiGithub,
   githubactions: SiGithubactions,
