@@ -1,0 +1,8 @@
+{
+  "name": "portfolio",
+  "private": true,
+  "description": "Root package so Vercel serverless api/* can resolve mongoose (frontend deps live in frontend/).",
+  "dependencies": {
+    "mongoose": "^8.23.0"
+  }
+}
