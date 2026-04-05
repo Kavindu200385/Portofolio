@@ -25,6 +25,83 @@ function readAsBase64(file: File): Promise<string> {
   });
 }
 
+/** Shrink large photos before base64 so PUT/POST stays under Vercel's ~4.5 MB body limit. */
+function readImageFileAsCompressedDataUrl(file: File, maxEdge = 1600, jpegQuality = 0.85): Promise<string> {
+  if (!file.type.startsWith("image/") || file.type === "image/svg+xml") {
+    return readAsBase64(file);
+  }
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let w = img.naturalWidth;
+      let h = img.naturalHeight;
+      if (!w || !h) {
+        void readAsBase64(file).then(resolve).catch(reject);
+        return;
+      }
+      const scale = Math.min(1, maxEdge / Math.max(w, h));
+      w = Math.max(1, Math.round(w * scale));
+      h = Math.max(1, Math.round(h * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        void readAsBase64(file).then(resolve).catch(reject);
+        return;
+      }
+      ctx.drawImage(img, 0, 0, w, h);
+      try {
+        resolve(canvas.toDataURL("image/jpeg", jpegQuality));
+      } catch {
+        void readAsBase64(file).then(resolve).catch(reject);
+      }
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      void readAsBase64(file).then(resolve).catch(reject);
+    };
+    img.src = url;
+  });
+}
+
+/** If the DB already stores a huge data-URL, shrink it on save so the request fits Vercel limits. */
+function compressDataUrlIfHuge(dataUrl: string, maxChars = 2_500_000): Promise<string> {
+  if (dataUrl.length <= maxChars || !dataUrl.startsWith("data:image")) {
+    return Promise.resolve(dataUrl);
+  }
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      let w = img.naturalWidth;
+      let h = img.naturalHeight;
+      const maxEdge = 1600;
+      const scale = Math.min(1, maxEdge / Math.max(w, h));
+      w = Math.max(1, Math.round(w * scale));
+      h = Math.max(1, Math.round(h * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        resolve(dataUrl);
+        return;
+      }
+      ctx.drawImage(img, 0, 0, w, h);
+      try {
+        resolve(canvas.toDataURL("image/jpeg", 0.85));
+      } catch {
+        resolve(dataUrl);
+      }
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+
 function AdminGuard() {
   if (!getAdminToken()) return <Navigate to="/admin/login" replace />;
   return <Outlet />;
@@ -1068,7 +1145,7 @@ function AboutPage() {
         <input type="file" accept="image/*" onChange={async (e) => {
           const f = e.target.files?.[0];
           if (!f) return;
-          setLocal({ ...local, profilePhoto: await readAsBase64(f) });
+          setLocal({ ...local, profilePhoto: await readImageFileAsCompressedDataUrl(f) });
         }} />
       </div>
       <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
@@ -1128,7 +1205,7 @@ function HeroPage() {
         <input type="file" accept="image/*" onChange={async (e) => {
           const f = e.target.files?.[0];
           if (!f) return;
-          setHero({ ...hero, heroPhoto: await readAsBase64(f) });
+          setHero({ ...hero, heroPhoto: await readImageFileAsCompressedDataUrl(f) });
         }} />
         <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
           <button type="button" disabled={saving} onClick={() => void saveHero()}>
@@ -1243,14 +1320,14 @@ function ProjectModal({
 
   const pickMainPhoto = async (file: File | undefined) => {
     if (!file) return;
-    const base64 = await readAsBase64(file);
+    const base64 = await readImageFileAsCompressedDataUrl(file);
     setState((prev) => ({ ...prev, thumbnail: base64 }));
   };
 
   const pickExtraPhotos = async (files: FileList | null) => {
     if (!files?.length) return;
     const arr = Array.from(files);
-    const base64s = await Promise.all(arr.map((f) => readAsBase64(f)));
+    const base64s = await Promise.all(arr.map((f) => readImageFileAsCompressedDataUrl(f)));
     setState((prev) => ({ ...prev, extraImages: [...(prev.extraImages ?? []), ...base64s] }));
   };
 
@@ -1277,7 +1354,15 @@ function ProjectModal({
     if (!validate()) return;
     setSaving(true);
     try {
-      await Promise.resolve(onSave({ ...state, techStack: stack }));
+      let thumbnail = state.thumbnail;
+      if (thumbnail.startsWith("data:image")) {
+        thumbnail = await compressDataUrlIfHuge(thumbnail);
+      }
+      const extras = state.extraImages ?? [];
+      const extraImages = await Promise.all(
+        extras.map((u) => (u.startsWith("data:image") ? compressDataUrlIfHuge(u) : u)),
+      );
+      await Promise.resolve(onSave({ ...state, thumbnail, extraImages, techStack: stack }));
     } finally {
       setSaving(false);
     }
@@ -2021,7 +2106,7 @@ function ExperienceModal({
         onChange={async (e) => {
           const f = e.target.files?.[0];
           if (!f) return;
-          setState({ ...state, logo: await readAsBase64(f) });
+          setState({ ...state, logo: await readImageFileAsCompressedDataUrl(f) });
         }}
       />
       <button type="button" disabled={saving} onClick={() => void submit()} style={{ marginTop: 10 }}>
@@ -2066,7 +2151,7 @@ function EducationModal({
         onChange={async (e) => {
           const f = e.target.files?.[0];
           if (!f) return;
-          setState({ ...state, logo: await readAsBase64(f) });
+          setState({ ...state, logo: await readImageFileAsCompressedDataUrl(f) });
         }}
       />
       <button type="button" disabled={saving} onClick={() => void submit()} style={{ marginTop: 10 }}>

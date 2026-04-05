@@ -10,6 +10,39 @@ export function isAdminSecretConfigured(): boolean {
   return Boolean(adminSecret().trim());
 }
 
+/** Vercel serverless JSON bodies are capped (~4.5 MB). Stay under this to avoid 500 from the edge. */
+const MAX_ADMIN_BODY_BYTES = 4 * 1024 * 1024;
+
+function assertAdminBodyFitsLimit(body: unknown): void {
+  if (body === undefined) return;
+  const json = JSON.stringify(body);
+  const bytes = new TextEncoder().encode(json).length;
+  if (bytes > MAX_ADMIN_BODY_BYTES) {
+    const mb = (bytes / (1024 * 1024)).toFixed(1);
+    throw new Error(
+      `Save payload is too large (${mb} MB). Hosting limits requests to about 4.5 MB. ` +
+        `Replace large pasted images with a URL (Imgur, GitHub raw, Cloudinary, etc.) or use smaller files, then save again.`,
+    );
+  }
+}
+
+function adminErrorMessage(res: Response, text: string, fallback: string): string {
+  if (res.status === 413) {
+    return "Request body too large for the server (about 4.5 MB max). Use image URLs instead of huge base64 photos.";
+  }
+  try {
+    const b = JSON.parse(text) as { error?: string };
+    if (b?.error) return b.error;
+  } catch {
+    /* ignore */
+  }
+  if (res.status === 404) return "Not found — API route may not match. Redeploy and check /api/health.";
+  if (res.status === 500 && /FUNCTION_INVOCATION_FAILED|server error/i.test(text)) {
+    return fallback;
+  }
+  return fallback || `Request failed (${res.status})`;
+}
+
 async function parseJson(res: Response) {
   const text = await res.text();
   if (!text) return null;
@@ -40,6 +73,7 @@ export async function publicGet<T>(path: string): Promise<T> {
 }
 
 export async function adminPost<T>(path: string, body: unknown): Promise<T> {
+  assertAdminBodyFitsLimit(body);
   const res = await fetch(path, {
     method: "POST",
     headers: {
@@ -50,19 +84,19 @@ export async function adminPost<T>(path: string, body: unknown): Promise<T> {
   });
   if (!res.ok) {
     const text = await res.text();
-    let msg = `Request failed (${res.status})`;
-    try {
-      const b = JSON.parse(text) as { error?: string };
-      if (b?.error) msg = b.error;
-    } catch {
-      if (res.status === 404) msg = "Not found — API route may not match. Redeploy and check /api/health.";
-    }
-    throw new Error(msg);
+    throw new Error(
+      adminErrorMessage(
+        res,
+        text,
+        `Request failed (${res.status}). If the payload is huge (base64 images), shrink it or use image URLs.`,
+      ),
+    );
   }
   return parseJsonResponse<T>(res);
 }
 
 export async function adminPut<T>(path: string, body?: unknown): Promise<T> {
+  assertAdminBodyFitsLimit(body);
   const res = await fetch(path, {
     method: "PUT",
     headers: {
@@ -73,14 +107,13 @@ export async function adminPut<T>(path: string, body?: unknown): Promise<T> {
   });
   if (!res.ok) {
     const text = await res.text();
-    let msg = `Request failed (${res.status})`;
-    try {
-      const b = JSON.parse(text) as { error?: string };
-      if (b?.error) msg = b.error;
-    } catch {
-      if (res.status === 404) msg = "Not found — API route may not match. Redeploy and check /api/health.";
-    }
-    throw new Error(msg);
+    throw new Error(
+      adminErrorMessage(
+        res,
+        text,
+        `Request failed (${res.status}). If the payload is huge (base64 images), shrink it or use image URLs.`,
+      ),
+    );
   }
   return parseJsonResponse<T>(res);
 }
@@ -94,14 +127,9 @@ export async function adminDelete<T>(path: string): Promise<T> {
   });
   if (!res.ok) {
     const text = await res.text();
-    let msg = `Request failed (${res.status})`;
-    try {
-      const b = JSON.parse(text) as { error?: string };
-      if (b?.error) msg = b.error;
-    } catch {
-      if (res.status === 404) msg = "Not found — API route may not match. Redeploy and check /api/health.";
-    }
-    throw new Error(msg);
+    throw new Error(
+      adminErrorMessage(res, text, `Request failed (${res.status})`),
+    );
   }
   return parseJsonResponse<T>(res);
 }
