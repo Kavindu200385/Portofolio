@@ -51,8 +51,10 @@ function adminErrorMessage(res: Response, text: string, fallback: string): strin
   }
   if (res.status === 404) {
     return (
-      fallback ||
-      "API path not found. Open /api/health in the browser. Set VITE_API_URL in frontend/.env if the API is on another host."
+      "API path not found (404). The /api routes are not running on this host. " +
+        "Locally: in a second terminal run `npx vercel dev --listen 3000` from the `frontend` folder (same folder as `api/`), keep Vite on its port—requests to /api are proxied to port 3000. " +
+        "Or set VITE_API_URL=https://your-deployment.vercel.app in frontend/.env (no trailing slash) and restart Vite. " +
+        "After adding new API routes, redeploy on Vercel."
     );
   }
   if (res.status === 500 && /FUNCTION_INVOCATION_FAILED|server error/i.test(text)) {
