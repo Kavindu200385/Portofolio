@@ -11,9 +11,19 @@ export function requireAdmin(req: any, res: any): boolean {
   return true;
 }
 
-/** Path segments after /api (no leading/trailing slashes). Works with relative or absolute req.url (Vercel). */
+/**
+ * Path segments after /api (e.g. `projects`, `507f…` for PUT /api/projects/:id).
+ * Vercel may set `req.url` to `/api/...`, `/...` (no /api), or a full URL — normalize all cases.
+ */
 export function apiPathSegments(req: any): string[] {
-  let path = String(req.url || "/").split("?")[0];
+  let raw =
+    req.url ??
+    req.originalUrl ??
+    req.headers?.["x-invoke-path"] ??
+    req.headers?.["x-vercel-original-path"] ??
+    "/";
+  if (typeof raw !== "string") raw = String(raw || "/");
+  let path = raw.split("?")[0];
   try {
     if (path.startsWith("http://") || path.startsWith("https://")) {
       path = new URL(path).pathname;
@@ -21,8 +31,14 @@ export function apiPathSegments(req: any): string[] {
   } catch {
     /* keep path */
   }
-  return path
-    .replace(/^\/api\/?/i, "")
-    .split("/")
-    .filter(Boolean);
+  if (!path || path === "/") return [];
+  // Strip /api when present; serverless may already omit it
+  if (path === "/api" || path.startsWith("/api/")) {
+    path = path.slice(4);
+    if (path.startsWith("/")) path = path.slice(1);
+  } else if (path.startsWith("/")) {
+    path = path.slice(1);
+  }
+  if (!path) return [];
+  return path.split("/").filter(Boolean);
 }

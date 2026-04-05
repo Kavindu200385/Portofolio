@@ -49,8 +49,15 @@ export async function adminPost<T>(path: string, body: unknown): Promise<T> {
     body: JSON.stringify(body),
   });
   if (!res.ok) {
-    const b = await parseJson(res);
-    throw new Error((b as { error?: string })?.error || `Request failed (${res.status})`);
+    const text = await res.text();
+    let msg = `Request failed (${res.status})`;
+    try {
+      const b = JSON.parse(text) as { error?: string };
+      if (b?.error) msg = b.error;
+    } catch {
+      if (res.status === 404) msg = "Not found — API route may not match. Redeploy and check /api/health.";
+    }
+    throw new Error(msg);
   }
   return parseJsonResponse<T>(res);
 }
@@ -65,8 +72,15 @@ export async function adminPut<T>(path: string, body?: unknown): Promise<T> {
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
   if (!res.ok) {
-    const b = await parseJson(res);
-    throw new Error((b as { error?: string })?.error || `Request failed (${res.status})`);
+    const text = await res.text();
+    let msg = `Request failed (${res.status})`;
+    try {
+      const b = JSON.parse(text) as { error?: string };
+      if (b?.error) msg = b.error;
+    } catch {
+      if (res.status === 404) msg = "Not found — API route may not match. Redeploy and check /api/health.";
+    }
+    throw new Error(msg);
   }
   return parseJsonResponse<T>(res);
 }
@@ -79,8 +93,15 @@ export async function adminDelete<T>(path: string): Promise<T> {
     },
   });
   if (!res.ok) {
-    const b = await parseJson(res);
-    throw new Error((b as { error?: string })?.error || `Request failed (${res.status})`);
+    const text = await res.text();
+    let msg = `Request failed (${res.status})`;
+    try {
+      const b = JSON.parse(text) as { error?: string };
+      if (b?.error) msg = b.error;
+    } catch {
+      if (res.status === 404) msg = "Not found — API route may not match. Redeploy and check /api/health.";
+    }
+    throw new Error(msg);
   }
   return parseJsonResponse<T>(res);
 }

@@ -19,6 +19,13 @@ import Hero from "../models/Hero.js";
 import Project from "../models/Project.js";
 import Skill from "../models/Skill.js";
 
+function invalidMongoIdResponse(res: any) {
+  return res.status(400).json({
+    error:
+      "Invalid document id. For built-in placeholder rows, use Save as new (creates a POST) or run Dashboard → Copy built-in content to database first.",
+  });
+}
+
 export default async function handler(req: any, res: any) {
   let seg: string[];
   try {
@@ -99,7 +106,7 @@ export default async function handler(req: any, res: any) {
           return res.status(400).json({ error: "Expected array of { id, order }" });
         }
         for (const row of items) {
-          if (!row?.id) continue;
+          if (!row?.id || !mongoose.isValidObjectId(row.id)) continue;
           await Project.findByIdAndUpdate(row.id, { $set: { order: row.order ?? 0 } });
         }
         const list = await Project.find().sort({ featured: -1, order: 1 }).lean();
@@ -107,6 +114,9 @@ export default async function handler(req: any, res: any) {
       }
       if (seg.length === 2) {
         const id = seg[1];
+        if (method === "PUT" || method === "DELETE") {
+          if (!mongoose.isValidObjectId(id)) return invalidMongoIdResponse(res);
+        }
         if (method === "PUT") {
           if (!requireAdmin(req, res)) return;
           const raw = normalizeProjectBody(req.body);
@@ -154,7 +164,7 @@ export default async function handler(req: any, res: any) {
           return res.status(400).json({ error: "Expected array of { id, order }" });
         }
         for (const row of items) {
-          if (!row?.id) continue;
+          if (!row?.id || !mongoose.isValidObjectId(row.id)) continue;
           await Skill.findByIdAndUpdate(row.id, { $set: { order: row.order ?? 0 } });
         }
         const list = await Skill.find().sort({ order: 1 }).lean();
@@ -162,6 +172,9 @@ export default async function handler(req: any, res: any) {
       }
       if (seg.length === 2) {
         const id = seg[1];
+        if (method === "PUT" || method === "DELETE") {
+          if (!mongoose.isValidObjectId(id)) return invalidMongoIdResponse(res);
+        }
         if (method === "PUT") {
           if (!requireAdmin(req, res)) return;
           const raw = normalizeSkillBody(req.body);
@@ -209,7 +222,7 @@ export default async function handler(req: any, res: any) {
           return res.status(400).json({ error: "Expected array of { id, order }" });
         }
         for (const row of items) {
-          if (!row?.id) continue;
+          if (!row?.id || !mongoose.isValidObjectId(row.id)) continue;
           await Experience.findByIdAndUpdate(row.id, { $set: { order: row.order ?? 0 } });
         }
         const list = await Experience.find().sort({ order: 1 }).lean();
@@ -217,6 +230,9 @@ export default async function handler(req: any, res: any) {
       }
       if (seg.length === 2) {
         const id = seg[1];
+        if (method === "PUT" || method === "DELETE") {
+          if (!mongoose.isValidObjectId(id)) return invalidMongoIdResponse(res);
+        }
         if (method === "PUT") {
           if (!requireAdmin(req, res)) return;
           const raw = experienceFromClient(req.body);
@@ -264,7 +280,7 @@ export default async function handler(req: any, res: any) {
           return res.status(400).json({ error: "Expected array of { id, order }" });
         }
         for (const row of items) {
-          if (!row?.id) continue;
+          if (!row?.id || !mongoose.isValidObjectId(row.id)) continue;
           await Education.findByIdAndUpdate(row.id, { $set: { order: row.order ?? 0 } });
         }
         const list = await Education.find().sort({ order: 1 }).lean();
@@ -272,6 +288,9 @@ export default async function handler(req: any, res: any) {
       }
       if (seg.length === 2) {
         const id = seg[1];
+        if (method === "PUT" || method === "DELETE") {
+          if (!mongoose.isValidObjectId(id)) return invalidMongoIdResponse(res);
+        }
         if (method === "PUT") {
           if (!requireAdmin(req, res)) return;
           const raw = educationFromClient(req.body);
