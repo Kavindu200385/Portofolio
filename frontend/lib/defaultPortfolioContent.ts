@@ -1,41 +1,13 @@
+import { defaultProjects } from "./defaultProjects";
+
 /**
  * Built-in portfolio content (same as public fallbacks when the API is empty).
  * Do not strip: this is the source of truth when the database is empty.
+ *
+ * Edit projects in `./defaultProjects.ts`.
  */
 export const defaultPortfolioContent = {
-  projects: [
-    {
-      id: "p1",
-      name: "FindWORK WebApp",
-      type: "Group",
-      shortDescription:
-        "A full-stack job discovery platform connecting job seekers with employers.",
-      longDescription:
-        "A full-stack job discovery platform connecting job seekers with employers. Features real-time filtering, user authentication, and a responsive dashboard for managing applications.",
-      thumbnail:
-        "https://images.unsplash.com/photo-1767449356630-c60094b1d1b4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800",
-      githubLink: "#",
-      liveDemoLink: "#",
-      techStack: ["React", "Node.js", "MongoDB", "Tailwind"],
-      extraImages: [],
-      featured: true,
-    },
-    {
-      id: "p2",
-      name: "KaviCode Portfolio",
-      type: "Individual",
-      shortDescription: "A modern developer portfolio with cinematic transitions.",
-      longDescription:
-        "A modern developer portfolio built with Next.js 14 App Router, Framer Motion, and Tailwind CSS. Showcases projects, skills, and experience with cinematic transitions.",
-      thumbnail:
-        "https://images.unsplash.com/photo-1720962158883-b0f2021fb51e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=800",
-      githubLink: "#",
-      liveDemoLink: "#",
-      techStack: ["Next.js", "TypeScript", "Framer Motion"],
-      extraImages: [],
-      featured: true,
-    },
-  ],
+  projects: defaultProjects,
   skills: [
     {
       id: "s-github",
