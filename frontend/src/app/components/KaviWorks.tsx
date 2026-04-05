@@ -274,7 +274,7 @@ export function KaviWorks() {
           className="works-grid"
         >
           {projects.map((p, i) => (
-            <ProjectCard key={p.id} project={p} index={i} inView={inView} />
+            <ProjectCard key={`${p.id}-${i}`} project={p} index={i} inView={inView} />
           ))}
         </div>
       </div>

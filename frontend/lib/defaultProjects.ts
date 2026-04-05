@@ -7,8 +7,8 @@ import type { ProjectItem } from "../src/app/data/portfolioData";
  * `type` must be one of: "Individual" | "Group" | "Research"
  * `thumbnail` / `extraImages`: use https URLs or site paths like `/my-screenshot.png` in `public/`.
  *
- * Note: If MongoDB returns at least one project, the API list replaces this entire array.
- * To rely only on this file, keep the projects collection empty (or don’t run the API).
+ * Note: When MongoDB returns projects, rows override built-in entries with the same project name;
+ * names with no DB row still use these defaults. Empty DB or failed fetch uses this list as-is.
  */
 export const defaultProjects: ProjectItem[] = [
   {

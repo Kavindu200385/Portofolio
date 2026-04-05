@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -129,6 +130,76 @@ async function fetchJsonLoose(path: string): Promise<unknown> {
   }
 }
 
+function normalizeProjectNameKey(name: string): string {
+  return name.trim().toLowerCase();
+}
+
+/** Avoid sharing the module’s default project objects with React state (safe merges / updates). */
+function cloneDefaultProjects(): ProjectItem[] {
+  return defaultPortfolioData.projects.map((p) => ({
+    ...p,
+    techStack: [...p.techStack],
+    extraImages: p.extraImages ? [...p.extraImages] : undefined,
+  }));
+}
+
+/**
+ * Some proxies or wrappers return `{ data: [...] }` instead of a raw array.
+ */
+function unwrapProjectsPayload(raw: unknown): unknown[] | null {
+  if (raw == null) return null;
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === "object") {
+    const o = raw as Record<string, unknown>;
+    if (Array.isArray(o.projects)) return o.projects;
+    if (Array.isArray(o.data)) return o.data;
+    if (Array.isArray(o.items)) return o.items;
+  }
+  return null;
+}
+
+function fileProjectsOnlyFromEnv(): boolean {
+  const env = import.meta.env as Record<string, string | undefined>;
+  const v = (env.VITE_USE_FILE_PROJECTS_ONLY ?? "").trim().toLowerCase();
+  return v === "true" || v === "1";
+}
+
+/**
+ * When MongoDB has only some projects, replacing the full default list makes the rest
+ * “disappear” after the API responds. We keep every built-in default and override by
+ * matching project name when the API returns a row for that name; API-only names append.
+ */
+function mergeProjectsWithDefaults(
+  rawList: unknown[],
+  defaults: ProjectItem[],
+): ProjectItem[] {
+  const apiMapped = rawList.map((d, i) =>
+    mapProjectFromApi(d as Record<string, unknown>, i),
+  );
+  const apiByName = new Map<string, ProjectItem>();
+  for (const p of apiMapped) {
+    const key = normalizeProjectNameKey(p.name);
+    if (key) apiByName.set(key, p);
+  }
+  const defaultNameKeys = new Set(
+    defaults.map((d) => normalizeProjectNameKey(d.name)).filter(Boolean),
+  );
+  const merged: ProjectItem[] = defaults.map((d) => {
+    const key = normalizeProjectNameKey(d.name);
+    if (key && apiByName.has(key)) {
+      return apiByName.get(key)!;
+    }
+    return d;
+  });
+  for (const p of apiMapped) {
+    const key = normalizeProjectNameKey(p.name);
+    if (key && !defaultNameKeys.has(key)) {
+      merged.push(p);
+    }
+  }
+  return merged;
+}
+
 /**
  * Merges API payloads with built-in defaults when the database is empty or an endpoint fails.
  */
@@ -143,14 +214,17 @@ function buildPortfolioData(
 ): PortfolioData {
 
   const projects: ProjectItem[] = (() => {
-    if (rawProjects == null) {
-      return defaultPortfolioData.projects;
+    if (fileProjectsOnlyFromEnv()) {
+      return cloneDefaultProjects();
     }
-    const arr = rawProjects;
-    if (!Array.isArray(arr) || arr.length === 0) {
-      return defaultPortfolioData.projects;
+    const unwrapped = unwrapProjectsPayload(rawProjects);
+    if (unwrapped == null) {
+      return cloneDefaultProjects();
     }
-    return arr.map((d) => mapProjectFromApi(d as Record<string, unknown>));
+    if (unwrapped.length === 0) {
+      return cloneDefaultProjects();
+    }
+    return mergeProjectsWithDefaults(unwrapped, cloneDefaultProjects());
   })();
 
   const skills: SkillItem[] = (() => {
@@ -279,25 +353,36 @@ const PortfolioDataContext = createContext<PortfolioContextValue | null>(null);
 
 /** Single source of portfolio API state for the whole app (avoids duplicate fetches and empty sections). */
 export function PortfolioDataProvider({ children }: { children: ReactNode }) {
+  const fetchGeneration = useRef(0);
   const [data, setData] = useState<PortfolioData>(() => ({
     ...defaultPortfolioData,
+    projects: cloneDefaultProjects(),
     changesLog: [],
   }));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const refetch = useCallback(async () => {
+    const gen = ++fetchGeneration.current;
     setLoading(true);
     setError(null);
     try {
       const next = await loadPortfolioFromApi();
+      if (gen !== fetchGeneration.current) return;
       setData(next);
     } catch (e) {
+      if (gen !== fetchGeneration.current) return;
       const msg = e instanceof Error ? e.message : "Failed to load portfolio data";
       setError(msg);
-      setData({ ...defaultPortfolioData, changesLog: [] });
+      setData({
+        ...defaultPortfolioData,
+        projects: cloneDefaultProjects(),
+        changesLog: [],
+      });
     } finally {
-      setLoading(false);
+      if (gen === fetchGeneration.current) {
+        setLoading(false);
+      }
     }
   }, []);
 

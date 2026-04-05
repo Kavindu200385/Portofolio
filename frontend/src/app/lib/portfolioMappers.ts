@@ -29,9 +29,14 @@ function asProficiency(v: unknown): SkillItem["proficiency"] {
   return PROFICIENCIES.includes(v as SkillItem["proficiency"]) ? (v as SkillItem["proficiency"]) : "Intermediate";
 }
 
-export function mapProjectFromApi(doc: Record<string, unknown>): ProjectItem {
+export function mapProjectFromApi(doc: Record<string, unknown>, index = 0): ProjectItem {
+  const rawId = doc._id;
+  const id =
+    rawId != null && String(rawId) !== "undefined"
+      ? String(rawId)
+      : `api-${index}-${String(doc.name ?? "project").replace(/\s+/g, "-").slice(0, 40)}`;
   return {
-    id: String(doc._id),
+    id,
     name: String(doc.name ?? ""),
     type: asProjectType(doc.category),
     shortDescription: String(doc.shortDescription ?? ""),
