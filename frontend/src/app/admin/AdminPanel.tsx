@@ -14,23 +14,24 @@ import {
   type SkillItem,
 } from "../data/portfolioData";
 import { adminDelete, adminPost, adminPut, isAdminSecretConfigured } from "../lib/portfolioApi";
+import { fileToCompressedDataUrl, uploadImageDataUrl } from "../lib/uploadPortfolioImage";
 import { SkillIcon } from "../components/skillIcons";
 
-/** Images are stored in MongoDB as URL strings only (https://... or /path), not base64. */
+/** Images are stored in MongoDB as URL strings only (https://… or /path), not base64. */
 function imageRefError(label: string, value: string, required: boolean): string | undefined {
   const t = value.trim();
   if (required && !t) return `${label} is required.`;
   if (!t) return undefined;
   if (t.startsWith("data:")) {
-    return `${label}: use a hosted image link instead of an uploaded file (e.g. Imgur, GitHub raw, Cloudinary).`;
+    return `${label}: use Upload to store the image — only a public link is saved in the database.`;
   }
   if (!(t.startsWith("https://") || t.startsWith("http://") || t.startsWith("/"))) {
-    return `${label} must start with https://, http://, or /`;
+    return `${label} must be a valid image URL (https://, http://, or a path on this site).`;
   }
   return undefined;
 }
 
-function ImageUrlField({
+function ImageUploadField({
   label,
   required,
   value,
@@ -43,28 +44,74 @@ function ImageUrlField({
   onChange: (v: string) => void;
   error?: string;
 }) {
+  const [busy, setBusy] = useState(false);
+  const pick = async (file: File | undefined) => {
+    if (!file) return;
+    setBusy(true);
+    try {
+      const dataUrl = await fileToCompressedDataUrl(file);
+      const url = await uploadImageDataUrl(dataUrl);
+      onChange(url);
+    } catch (e) {
+      pushAdminToast("error", e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setBusy(false);
+    }
+  };
   return (
     <div style={{ marginBottom: 14 }}>
       <div style={{ marginBottom: 4, fontSize: 12, fontWeight: 600 }}>
         {label}
         {required ? <span style={{ color: "#f97373", marginLeft: 4 }}>*</span> : null}
       </div>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="https://… or /image.png"
-        style={{
-          width: "100%",
-          padding: "10px 12px",
-          borderRadius: 12,
-          border: `1px solid ${error ? "rgba(248,113,113,0.8)" : "rgba(148,163,184,0.4)"}`,
-          background: "rgba(15,23,42,0.85)",
-          color: "#e5e7eb",
-          fontSize: 13,
-        }}
-      />
-      <div style={{ marginTop: 6, fontSize: 11, color: "rgba(148,163,184,0.95)", lineHeight: 1.45 }}>
-        Stored as a link in the database. Host the file (GitHub, Imgur, your CDN), then paste the direct image URL, or use a path under this site such as /profile.png.
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, marginBottom: 8 }}>
+        <label
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "10px 14px",
+            borderRadius: 12,
+            border: `1px solid ${error ? "rgba(248,113,113,0.8)" : "rgba(148,163,184,0.45)"}`,
+            background: busy ? "rgba(15,23,42,0.5)" : "rgba(59,130,246,0.15)",
+            color: "#e5e7eb",
+            fontSize: 13,
+            cursor: busy ? "wait" : "pointer",
+            opacity: busy ? 0.7 : 1,
+          }}
+        >
+          <input
+            type="file"
+            accept="image/*"
+            disabled={busy}
+            style={{ display: "none" }}
+            onChange={(e) => {
+              void pick(e.target.files?.[0]);
+              e.target.value = "";
+            }}
+          />
+          {busy ? "Uploading…" : "Choose image"}
+        </label>
+        {value.trim() ? (
+          <button
+            type="button"
+            onClick={() => onChange("")}
+            style={{
+              padding: "8px 12px",
+              borderRadius: 12,
+              border: "1px solid rgba(148,163,184,0.4)",
+              background: "transparent",
+              color: "rgba(248,113,113,0.95)",
+              fontSize: 12,
+              cursor: "pointer",
+            }}
+          >
+            Remove
+          </button>
+        ) : null}
+      </div>
+      <div style={{ marginTop: 2, fontSize: 11, color: "rgba(148,163,184,0.95)", lineHeight: 1.45 }}>
+        The file is uploaded to blob storage; MongoDB stores the public image URL only (not base64).
       </div>
       {value.trim() && !value.trim().startsWith("data:") ? (
         <div style={{ marginTop: 10 }}>
@@ -1074,7 +1121,7 @@ function AboutPage() {
   if (error) return <ErrorRetry message={error} onRetry={() => void refetch()} />;
 
   const saveAbout = async () => {
-    const pe = imageRefError("Profile photo URL", local.profilePhoto, false);
+    const pe = imageRefError("Profile photo", local.profilePhoto, false);
     if (pe) {
       pushAdminToast("error", pe);
       return;
@@ -1130,8 +1177,8 @@ function AboutPage() {
       </div>
       <button onClick={() => setLocal({ ...local, badges: [...local.badges, { id: `b_${Date.now()}`, emoji: "✨", label: "New Badge" }] })}>Add Badge</button>
       <div style={{ marginTop: 12 }}>
-        <ImageUrlField
-          label="Profile photo URL"
+        <ImageUploadField
+          label="Profile photo"
           value={local.profilePhoto}
           onChange={(v) => setLocal({ ...local, profilePhoto: v })}
         />
@@ -1155,7 +1202,7 @@ function HeroPage() {
   if (error) return <ErrorRetry message={error} onRetry={() => void refetch()} />;
 
   const saveHero = async () => {
-    const he = imageRefError("Hero photo URL", hero.heroPhoto, true);
+    const he = imageRefError("Hero photo", hero.heroPhoto, true);
     if (he) {
       pushAdminToast("error", he);
       return;
@@ -1195,8 +1242,8 @@ function HeroPage() {
         <input value={hero.cta1Link} onChange={(e) => setHero({ ...hero, cta1Link: e.target.value })} style={{ width: "100%", marginBottom: 8 }} />
         <input value={hero.cta2Label} onChange={(e) => setHero({ ...hero, cta2Label: e.target.value })} style={{ width: "100%", marginBottom: 8 }} />
         <input value={hero.cta2Link} onChange={(e) => setHero({ ...hero, cta2Link: e.target.value })} style={{ width: "100%", marginBottom: 8 }} />
-        <ImageUrlField
-          label="Hero photo URL"
+        <ImageUploadField
+          label="Hero photo"
           required
           value={hero.heroPhoto}
           onChange={(v) => setHero({ ...hero, heroPhoto: v })}
@@ -1293,7 +1340,7 @@ function ProjectModal({
   const [shortCount, setShortCount] = useState(item.shortDescription?.length ?? 0);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [extraDraft, setExtraDraft] = useState("");
+  const [extrasBusy, setExtrasBusy] = useState(false);
 
   const addTag = () => {
     const v = stackInput.trim();
@@ -1320,6 +1367,22 @@ function ProjectModal({
     }));
   };
 
+  const addExtraFiles = async (files: FileList | null) => {
+    if (!files?.length) return;
+    setExtrasBusy(true);
+    try {
+      for (const file of Array.from(files)) {
+        const dataUrl = await fileToCompressedDataUrl(file);
+        const url = await uploadImageDataUrl(dataUrl);
+        setState((prev) => ({ ...prev, extraImages: [...(prev.extraImages ?? []), url] }));
+      }
+    } catch (e) {
+      pushAdminToast("error", e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setExtrasBusy(false);
+    }
+  };
+
   const validate = () => {
     const nextErrors: Record<string, string> = {};
     if (!state.name.trim()) nextErrors.name = "Project name is required.";
@@ -1327,7 +1390,7 @@ function ProjectModal({
     if (!state.shortDescription.trim()) nextErrors.shortDescription = "Short description is required.";
     if (shortCount > 150) nextErrors.shortDescription = "Short description must be 150 characters or less.";
     if (!state.longDescription.trim()) nextErrors.longDescription = "Full description is required.";
-    const mainErr = imageRefError("Main photo URL", state.thumbnail, true);
+    const mainErr = imageRefError("Main photo", state.thumbnail, true);
     if (mainErr) nextErrors.thumbnail = mainErr;
     (state.extraImages ?? []).forEach((url, i) => {
       const ex = imageRefError(`Additional photo ${i + 1}`, url, true);
@@ -1576,62 +1639,52 @@ function ProjectModal({
             )}
           </div>
 
-          {/* 5. Main Photo (URL → stored as link in DB) */}
-          <ImageUrlField
-            label="Main photo URL"
+          {/* 5. Main photo (upload → URL in DB) */}
+          <ImageUploadField
+            label="Main photo"
             required
             value={state.thumbnail}
             onChange={(v) => setState({ ...state, thumbnail: v })}
             error={errors.thumbnail}
           />
 
-          {/* 6. Additional Photos (URLs) */}
+          {/* 6. Additional photos (optional, same upload flow) */}
           <div style={{ marginBottom: 14 }}>
             <div style={{ marginBottom: 4, fontSize: 12, fontWeight: 600 }}>
               <span>Additional photos</span>
               <span style={{ color: "rgba(148,163,184,0.9)", marginLeft: 4 }}>(optional)</span>
             </div>
-            <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-              <input
-                value={extraDraft}
-                onChange={(e) => setExtraDraft(e.target.value)}
-                placeholder="https://… another image URL"
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, marginBottom: 8 }}>
+              <label
                 style={{
-                  flex: 1,
-                  padding: "10px 12px",
-                  borderRadius: 12,
-                  border: "1px solid rgba(148,163,184,0.4)",
-                  background: "rgba(15,23,42,0.85)",
-                  color: "#e5e7eb",
-                  fontSize: 13,
-                }}
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  const err = imageRefError("Image URL", extraDraft, true);
-                  if (err) {
-                    pushAdminToast("error", err);
-                    return;
-                  }
-                  setState((prev) => ({
-                    ...prev,
-                    extraImages: [...(prev.extraImages ?? []), extraDraft.trim()],
-                  }));
-                  setExtraDraft("");
-                }}
-                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
                   padding: "10px 14px",
                   borderRadius: 12,
                   border: "1px solid rgba(148,163,184,0.45)",
-                  background: "rgba(59,130,246,0.2)",
+                  background: extrasBusy ? "rgba(15,23,42,0.5)" : "rgba(59,130,246,0.15)",
                   color: "#e5e7eb",
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
+                  fontSize: 13,
+                  cursor: extrasBusy ? "wait" : "pointer",
+                  opacity: extrasBusy ? 0.7 : 1,
                 }}
               >
-                Add URL
-              </button>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  disabled={extrasBusy}
+                  style={{ display: "none" }}
+                  onChange={(e) => {
+                    void addExtraFiles(e.target.files);
+                    e.target.value = "";
+                  }}
+                />
+                {extrasBusy ? "Uploading…" : "Add photos"}
+              </label>
+              <span style={{ fontSize: 11, color: "rgba(148,163,184,0.9)" }}>
+                Each file is uploaded; stored URLs are appended to this project.
+              </span>
             </div>
             {(state.extraImages ?? []).map((_, idx) =>
               errors[`extra_${idx}`] ? (
@@ -1996,7 +2049,7 @@ function ExperienceModal({
   const [state, setState] = useState(item);
   const [saving, setSaving] = useState(false);
   const submit = async () => {
-    const le = imageRefError("Logo URL", state.logo, false);
+    const le = imageRefError("Company logo", state.logo, false);
     if (le) {
       pushAdminToast("error", le);
       return;
@@ -2018,8 +2071,8 @@ function ExperienceModal({
         <input type="checkbox" checked={state.present} onChange={(e) => setState({ ...state, present: e.target.checked })} /> Present
       </label>
       <textarea value={state.description} onChange={(e) => setState({ ...state, description: e.target.value })} placeholder="Description" style={{ width: "100%", minHeight: 80, marginBottom: 8 }} />
-      <ImageUrlField
-        label="Company logo URL"
+      <ImageUploadField
+        label="Company logo"
         value={state.logo}
         onChange={(v) => setState({ ...state, logo: v })}
       />
@@ -2042,7 +2095,7 @@ function EducationModal({
   const [state, setState] = useState(item);
   const [saving, setSaving] = useState(false);
   const submit = async () => {
-    const le = imageRefError("Logo URL", state.logo, false);
+    const le = imageRefError("Institution logo", state.logo, false);
     if (le) {
       pushAdminToast("error", le);
       return;
@@ -2064,8 +2117,8 @@ function EducationModal({
         <input type="checkbox" checked={state.present} onChange={(e) => setState({ ...state, present: e.target.checked })} /> Present
       </label>
       <textarea value={state.description} onChange={(e) => setState({ ...state, description: e.target.value })} placeholder="Description" style={{ width: "100%", minHeight: 80, marginBottom: 8 }} />
-      <ImageUrlField
-        label="Institution logo URL"
+      <ImageUploadField
+        label="Institution logo"
         value={state.logo}
         onChange={(v) => setState({ ...state, logo: v })}
       />

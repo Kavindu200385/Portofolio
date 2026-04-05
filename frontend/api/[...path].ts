@@ -65,6 +65,21 @@ export default async function handler(req: any, res: any) {
       }
     }
 
+    // —— Admin: image upload → Vercel Blob (public URL stored in MongoDB; no DB connection required) ——
+    if (seg[0] === "admin" && seg[1] === "upload-image" && seg.length === 2 && method === "POST") {
+      if (!requireAdmin(req, res)) return;
+      const dataUrl = req.body?.dataUrl;
+      if (typeof dataUrl !== "string") {
+        return res.status(400).json({ error: "Expected JSON body { dataUrl: string }" });
+      }
+      const { uploadPortfolioImageFromDataUrl } = await import("../lib/api/uploadBlob.js");
+      const result = await uploadPortfolioImageFromDataUrl(dataUrl);
+      if (result.error) {
+        return res.status(result.status ?? 500).json({ error: result.error });
+      }
+      return res.status(200).json({ url: result.url });
+    }
+
     await connectDB();
 
     // —— Admin: seed built-in defaults only into empty collections (never deletes) ——
