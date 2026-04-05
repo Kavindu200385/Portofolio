@@ -5,7 +5,7 @@ import type { ProjectItem } from "../src/app/data/portfolioData";
  *
  * To add a project: copy an object below, give it a unique `id`, and fill every field.
  * `type` must be one of: "Individual" | "Group" | "Research"
- * `thumbnail` / `extraImages`: use https URLs or site paths like `/my-screenshot.png` in `public/`.
+ * `thumbnail` / `extraImages`: use https URLs or site paths like `/photos/name.jpg` (files must live under `frontend/public/photos/`; avoid spaces in filenames).
  *
  * Note: When MongoDB returns projects, rows override built-in entries with the same project name;
  * names with no DB row still use these defaults. Empty DB or failed fetch uses this list as-is.
@@ -67,8 +67,7 @@ export const defaultProjects: ProjectItem[] = [
       "A full-stack web app to manage vehicle parts with CRUD, filtering, and real-time stock updates.",
     longDescription:
       "A full-stack inventory app for managing vehicle parts with full CRUD, search and filters by name, type, or status, and real-time stock status so levels stay accurate as data changes. The backend is a RESTful API built with Node.js and Express on top of MySQL, with structured error handling, CORS enabled for the React client, and configuration loaded through dotenv. The front end uses React with Axios for API calls and CSS for a responsive layout that works across devices.",
-    thumbnail:
-      "/photos/vehicle parts inventory system(1).jpeg",
+    thumbnail: "/photos/vehicle-parts-inventory.jpeg",
     githubLink: "https://github.com/Kavindu200385/Vehicle-Parts-Inventory-System",
     liveDemoLink: "#",
     techStack: ["React","Axios","CSS","Node.js","Express","MySQL"],
@@ -84,8 +83,7 @@ export const defaultProjects: ProjectItem[] = [
       "A fully functional, modern laptop e-commerce platform built with React, TypeScript, NestJS, and MySQL.",
     longDescription:
       "TechWave is a full-stack laptop storefront with a dark-themed React 18 and TypeScript front end powered by Vite, Tailwind CSS, Framer Motion, React Router, Zustand, and Axios. Shoppers can browse and filter the catalog, manage a cart and wishlist, authenticate and maintain profiles, place and track orders, leave reviews, check out with integrated payments, and use a real-time AI chatbot for support, while admins operate a full dashboard for products, orders, users, and analytics. The NestJS back end exposes a secure REST API with JWT and Passport.js, TypeORM on MySQL for persistence, class-validator for input validation, and flows for cart, wishlist, orders, categories, and admin operations across the full order lifecycle.",
-    thumbnail:
-      "/photos/TechWave.jpeg",
+    thumbnail: "/photos/techwave.jpeg",
     githubLink: "https://github.com/Kavindu200385/TechWave-Modern-Laptop-E-commerce-Platform",
     liveDemoLink: "#",
     techStack: [
