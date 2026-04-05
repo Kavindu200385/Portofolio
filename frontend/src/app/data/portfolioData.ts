@@ -18,6 +18,7 @@ import {
   mapProjectFromApi,
   mapSkillFromApi,
 } from "../lib/portfolioMappers";
+import { apiUrl } from "../lib/apiBase";
 
 export type ProjectType = "Group" | "Individual" | "Research";
 export type SkillCategory = "Frontend" | "Backend" | "DevOps" | "Tools";
@@ -127,7 +128,7 @@ export function pushAdminToast(type: "success" | "error", message: string) {
 
 async function fetchJsonLoose(path: string): Promise<unknown> {
   try {
-    const res = await fetch(path);
+    const res = await fetch(apiUrl(path));
     if (!res.ok) return null;
     if (res.status === 204) return null;
     const text = await res.text();

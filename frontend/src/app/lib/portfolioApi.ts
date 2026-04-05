@@ -1,3 +1,5 @@
+import { apiUrl } from "./apiBase";
+
 const adminSecret = () =>
   String(
     (import.meta.env as Record<string, string | undefined>).NEXT_PUBLIC_ADMIN_SECRET ??
@@ -26,6 +28,11 @@ function assertAdminBodyFitsLimit(body: unknown): void {
   }
 }
 
+function looksLikeHtml(s: string): boolean {
+  const t = s.trim().slice(0, 80).toLowerCase();
+  return t.startsWith("<!doctype") || t.startsWith("<html");
+}
+
 function adminErrorMessage(res: Response, text: string, fallback: string): string {
   if (res.status === 413) {
     return "Request body too large for the server (about 4.5 MB max). Use image URLs instead of huge base64 photos.";
@@ -36,7 +43,18 @@ function adminErrorMessage(res: Response, text: string, fallback: string): strin
   } catch {
     /* ignore */
   }
-  if (res.status === 404) return "Not found — API route may not match. Redeploy and check /api/health.";
+  if (res.status === 404 && looksLikeHtml(text)) {
+    return (
+      "API returned a web page instead of JSON (routing issue). Fix: In Vercel → Settings → General, set Root Directory to empty (repo root) OR to `frontend`, then redeploy—only one should match your repo. " +
+      "If you use `npm run dev` locally, run `npx vercel dev --listen 3000` in `frontend` and keep the Vite proxy, or set VITE_API_URL in .env to your live API URL (e.g. https://kavicode.vercel.app)."
+    );
+  }
+  if (res.status === 404) {
+    return (
+      fallback ||
+      "API path not found. Open /api/health in the browser. Set VITE_API_URL in frontend/.env if the API is on another host."
+    );
+  }
   if (res.status === 500 && /FUNCTION_INVOCATION_FAILED|server error/i.test(text)) {
     return fallback;
   }
@@ -64,7 +82,7 @@ async function parseJsonResponse<T>(res: Response): Promise<T> {
 }
 
 export async function publicGet<T>(path: string): Promise<T> {
-  const res = await fetch(path, { method: "GET" });
+  const res = await fetch(apiUrl(path), { method: "GET" });
   if (!res.ok) {
     const body = await parseJson(res);
     throw new Error((body as { error?: string })?.error || `Request failed (${res.status})`);
@@ -74,7 +92,7 @@ export async function publicGet<T>(path: string): Promise<T> {
 
 export async function adminPost<T>(path: string, body: unknown): Promise<T> {
   assertAdminBodyFitsLimit(body);
-  const res = await fetch(path, {
+  const res = await fetch(apiUrl(path), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -97,7 +115,7 @@ export async function adminPost<T>(path: string, body: unknown): Promise<T> {
 
 export async function adminPut<T>(path: string, body?: unknown): Promise<T> {
   assertAdminBodyFitsLimit(body);
-  const res = await fetch(path, {
+  const res = await fetch(apiUrl(path), {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -119,7 +137,7 @@ export async function adminPut<T>(path: string, body?: unknown): Promise<T> {
 }
 
 export async function adminDelete<T>(path: string): Promise<T> {
-  const res = await fetch(path, {
+  const res = await fetch(apiUrl(path), {
     method: "DELETE",
     headers: {
       "x-admin-secret": adminSecret(),

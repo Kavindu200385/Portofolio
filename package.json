@@ -1,0 +1,7 @@
+{
+  "name": "portfolio-monorepo",
+  "private": true,
+  "dependencies": {
+    "mongoose": "^8.23.0"
+  }
+}

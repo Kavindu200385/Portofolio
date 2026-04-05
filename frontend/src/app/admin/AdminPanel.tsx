@@ -16,90 +16,73 @@ import {
 import { adminDelete, adminPost, adminPut, isAdminSecretConfigured } from "../lib/portfolioApi";
 import { SkillIcon } from "../components/skillIcons";
 
-function readAsBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result ?? ""));
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
+/** Images are stored in MongoDB as URL strings only (https://... or /path), not base64. */
+function imageRefError(label: string, value: string, required: boolean): string | undefined {
+  const t = value.trim();
+  if (required && !t) return `${label} is required.`;
+  if (!t) return undefined;
+  if (t.startsWith("data:")) {
+    return `${label}: use a hosted image link instead of an uploaded file (e.g. Imgur, GitHub raw, Cloudinary).`;
+  }
+  if (!(t.startsWith("https://") || t.startsWith("http://") || t.startsWith("/"))) {
+    return `${label} must start with https://, http://, or /`;
+  }
+  return undefined;
 }
 
-/** Shrink large photos before base64 so PUT/POST stays under Vercel's ~4.5 MB body limit. */
-function readImageFileAsCompressedDataUrl(file: File, maxEdge = 1600, jpegQuality = 0.85): Promise<string> {
-  if (!file.type.startsWith("image/") || file.type === "image/svg+xml") {
-    return readAsBase64(file);
-  }
-  return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      let w = img.naturalWidth;
-      let h = img.naturalHeight;
-      if (!w || !h) {
-        void readAsBase64(file).then(resolve).catch(reject);
-        return;
-      }
-      const scale = Math.min(1, maxEdge / Math.max(w, h));
-      w = Math.max(1, Math.round(w * scale));
-      h = Math.max(1, Math.round(h * scale));
-      const canvas = document.createElement("canvas");
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        void readAsBase64(file).then(resolve).catch(reject);
-        return;
-      }
-      ctx.drawImage(img, 0, 0, w, h);
-      try {
-        resolve(canvas.toDataURL("image/jpeg", jpegQuality));
-      } catch {
-        void readAsBase64(file).then(resolve).catch(reject);
-      }
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      void readAsBase64(file).then(resolve).catch(reject);
-    };
-    img.src = url;
-  });
-}
-
-/** If the DB already stores a huge data-URL, shrink it on save so the request fits Vercel limits. */
-function compressDataUrlIfHuge(dataUrl: string, maxChars = 2_500_000): Promise<string> {
-  if (dataUrl.length <= maxChars || !dataUrl.startsWith("data:image")) {
-    return Promise.resolve(dataUrl);
-  }
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      let w = img.naturalWidth;
-      let h = img.naturalHeight;
-      const maxEdge = 1600;
-      const scale = Math.min(1, maxEdge / Math.max(w, h));
-      w = Math.max(1, Math.round(w * scale));
-      h = Math.max(1, Math.round(h * scale));
-      const canvas = document.createElement("canvas");
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        resolve(dataUrl);
-        return;
-      }
-      ctx.drawImage(img, 0, 0, w, h);
-      try {
-        resolve(canvas.toDataURL("image/jpeg", 0.85));
-      } catch {
-        resolve(dataUrl);
-      }
-    };
-    img.onerror = () => resolve(dataUrl);
-    img.src = dataUrl;
-  });
+function ImageUrlField({
+  label,
+  required,
+  value,
+  onChange,
+  error,
+}: {
+  label: string;
+  required?: boolean;
+  value: string;
+  onChange: (v: string) => void;
+  error?: string;
+}) {
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ marginBottom: 4, fontSize: 12, fontWeight: 600 }}>
+        {label}
+        {required ? <span style={{ color: "#f97373", marginLeft: 4 }}>*</span> : null}
+      </div>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="https://… or /image.png"
+        style={{
+          width: "100%",
+          padding: "10px 12px",
+          borderRadius: 12,
+          border: `1px solid ${error ? "rgba(248,113,113,0.8)" : "rgba(148,163,184,0.4)"}`,
+          background: "rgba(15,23,42,0.85)",
+          color: "#e5e7eb",
+          fontSize: 13,
+        }}
+      />
+      <div style={{ marginTop: 6, fontSize: 11, color: "rgba(148,163,184,0.95)", lineHeight: 1.45 }}>
+        Stored as a link in the database. Host the file (GitHub, Imgur, your CDN), then paste the direct image URL, or use a path under this site such as /profile.png.
+      </div>
+      {value.trim() && !value.trim().startsWith("data:") ? (
+        <div style={{ marginTop: 10 }}>
+          <img
+            src={value.trim()}
+            alt=""
+            style={{ maxWidth: "100%", maxHeight: 180, borderRadius: 12, objectFit: "cover" }}
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.opacity = "0.3";
+            }}
+          />
+        </div>
+      ) : null}
+      {error ? (
+        <div style={{ marginTop: 4, fontSize: 11, color: "#f87171" }}>{error}</div>
+      ) : null}
+    </div>
+  );
 }
 
 function AdminGuard() {
@@ -1091,6 +1074,11 @@ function AboutPage() {
   if (error) return <ErrorRetry message={error} onRetry={() => void refetch()} />;
 
   const saveAbout = async () => {
+    const pe = imageRefError("Profile photo URL", local.profilePhoto, false);
+    if (pe) {
+      pushAdminToast("error", pe);
+      return;
+    }
     setSaving(true);
     try {
       await adminPut("/api/about", {
@@ -1142,11 +1130,11 @@ function AboutPage() {
       </div>
       <button onClick={() => setLocal({ ...local, badges: [...local.badges, { id: `b_${Date.now()}`, emoji: "✨", label: "New Badge" }] })}>Add Badge</button>
       <div style={{ marginTop: 12 }}>
-        <input type="file" accept="image/*" onChange={async (e) => {
-          const f = e.target.files?.[0];
-          if (!f) return;
-          setLocal({ ...local, profilePhoto: await readImageFileAsCompressedDataUrl(f) });
-        }} />
+        <ImageUrlField
+          label="Profile photo URL"
+          value={local.profilePhoto}
+          onChange={(v) => setLocal({ ...local, profilePhoto: v })}
+        />
       </div>
       <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
         <button disabled={saving} onClick={() => void saveAbout()} style={{ padding: "8px 12px" }}>
@@ -1167,6 +1155,11 @@ function HeroPage() {
   if (error) return <ErrorRetry message={error} onRetry={() => void refetch()} />;
 
   const saveHero = async () => {
+    const he = imageRefError("Hero photo URL", hero.heroPhoto, true);
+    if (he) {
+      pushAdminToast("error", he);
+      return;
+    }
     setSaving(true);
     try {
       await adminPut("/api/hero", hero);
@@ -1202,11 +1195,12 @@ function HeroPage() {
         <input value={hero.cta1Link} onChange={(e) => setHero({ ...hero, cta1Link: e.target.value })} style={{ width: "100%", marginBottom: 8 }} />
         <input value={hero.cta2Label} onChange={(e) => setHero({ ...hero, cta2Label: e.target.value })} style={{ width: "100%", marginBottom: 8 }} />
         <input value={hero.cta2Link} onChange={(e) => setHero({ ...hero, cta2Link: e.target.value })} style={{ width: "100%", marginBottom: 8 }} />
-        <input type="file" accept="image/*" onChange={async (e) => {
-          const f = e.target.files?.[0];
-          if (!f) return;
-          setHero({ ...hero, heroPhoto: await readImageFileAsCompressedDataUrl(f) });
-        }} />
+        <ImageUrlField
+          label="Hero photo URL"
+          required
+          value={hero.heroPhoto}
+          onChange={(v) => setHero({ ...hero, heroPhoto: v })}
+        />
         <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
           <button type="button" disabled={saving} onClick={() => void saveHero()}>
             {saving ? "Saving..." : "Save"}
@@ -1299,6 +1293,7 @@ function ProjectModal({
   const [shortCount, setShortCount] = useState(item.shortDescription?.length ?? 0);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [extraDraft, setExtraDraft] = useState("");
 
   const addTag = () => {
     const v = stackInput.trim();
@@ -1318,19 +1313,6 @@ function ProjectModal({
     }
   };
 
-  const pickMainPhoto = async (file: File | undefined) => {
-    if (!file) return;
-    const base64 = await readImageFileAsCompressedDataUrl(file);
-    setState((prev) => ({ ...prev, thumbnail: base64 }));
-  };
-
-  const pickExtraPhotos = async (files: FileList | null) => {
-    if (!files?.length) return;
-    const arr = Array.from(files);
-    const base64s = await Promise.all(arr.map((f) => readImageFileAsCompressedDataUrl(f)));
-    setState((prev) => ({ ...prev, extraImages: [...(prev.extraImages ?? []), ...base64s] }));
-  };
-
   const removeExtraImage = (idx: number) => {
     setState((prev) => ({
       ...prev,
@@ -1345,7 +1327,12 @@ function ProjectModal({
     if (!state.shortDescription.trim()) nextErrors.shortDescription = "Short description is required.";
     if (shortCount > 150) nextErrors.shortDescription = "Short description must be 150 characters or less.";
     if (!state.longDescription.trim()) nextErrors.longDescription = "Full description is required.";
-    if (!state.thumbnail) nextErrors.thumbnail = "Main photo is required.";
+    const mainErr = imageRefError("Main photo URL", state.thumbnail, true);
+    if (mainErr) nextErrors.thumbnail = mainErr;
+    (state.extraImages ?? []).forEach((url, i) => {
+      const ex = imageRefError(`Additional photo ${i + 1}`, url, true);
+      if (ex) nextErrors[`extra_${i}`] = ex;
+    });
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   };
@@ -1354,15 +1341,7 @@ function ProjectModal({
     if (!validate()) return;
     setSaving(true);
     try {
-      let thumbnail = state.thumbnail;
-      if (thumbnail.startsWith("data:image")) {
-        thumbnail = await compressDataUrlIfHuge(thumbnail);
-      }
-      const extras = state.extraImages ?? [];
-      const extraImages = await Promise.all(
-        extras.map((u) => (u.startsWith("data:image") ? compressDataUrlIfHuge(u) : u)),
-      );
-      await Promise.resolve(onSave({ ...state, thumbnail, extraImages, techStack: stack }));
+      await Promise.resolve(onSave({ ...state, techStack: stack }));
     } finally {
       setSaving(false);
     }
@@ -1597,136 +1576,70 @@ function ProjectModal({
             )}
           </div>
 
-          {/* 5. Main Photo */}
-          <div style={{ marginBottom: 14 }}>
-            <div style={{ marginBottom: 4, fontSize: 12, fontWeight: 600 }}>
-              <span>Main Photo</span>
-              <span style={{ color: "#f97373", marginLeft: 4 }}>*</span>
-            </div>
-            <label
-              style={{
-                display: "block",
-                borderRadius: 16,
-                border: `1px dashed ${errors.thumbnail ? "rgba(248,113,113,0.8)" : "rgba(148,163,184,0.6)"}`,
-                background: "rgba(15,23,42,0.7)",
-                padding: 12,
-                cursor: "pointer",
-              }}
-            >
-              <input
-                type="file"
-                accept="image/*"
-                style={{ display: "none" }}
-                onChange={async (e) => {
-                  const f = e.target.files?.[0];
-                  await pickMainPhoto(f);
-                }}
-              />
-              {state.thumbnail ? (
-                <div>
-                  <img
-                    src={state.thumbnail}
-                    alt=""
-                    style={{
-                      width: "100%",
-                      borderRadius: 12,
-                      objectFit: "cover",
-                      maxHeight: 180,
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={(evt) => {
-                      evt.preventDefault();
-                      evt.stopPropagation();
-                      setState({ ...state, thumbnail: "" });
-                    }}
-                    style={{
-                      marginTop: 8,
-                      padding: "6px 10px",
-                      borderRadius: 999,
-                      border: "1px solid rgba(248,113,113,0.6)",
-                      background: "rgba(248,113,113,0.12)",
-                      color: "#fecaca",
-                      fontSize: 12,
-                      cursor: "pointer",
-                    }}
-                  >
-                    Remove photo
-                  </button>
-                </div>
-              ) : (
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    padding: "18px 8px",
-                    gap: 6,
-                  }}
-                >
-                  <div style={{ fontSize: 22 }}>📷</div>
-                  <div style={{ fontSize: 13, color: "#e5e7eb" }}>
-                    Click to upload main photo
-                  </div>
-                  <div style={{ fontSize: 11, color: "rgba(148,163,184,0.9)" }}>
-                    PNG, JPG, WEBP up to 5MB
-                  </div>
-                </div>
-              )}
-            </label>
-            {errors.thumbnail && (
-              <div style={{ marginTop: 4, fontSize: 11, color: "#f87171" }}>
-                {errors.thumbnail}
-              </div>
-            )}
-          </div>
+          {/* 5. Main Photo (URL → stored as link in DB) */}
+          <ImageUrlField
+            label="Main photo URL"
+            required
+            value={state.thumbnail}
+            onChange={(v) => setState({ ...state, thumbnail: v })}
+            error={errors.thumbnail}
+          />
 
-          {/* 6. Additional Photos */}
+          {/* 6. Additional Photos (URLs) */}
           <div style={{ marginBottom: 14 }}>
             <div style={{ marginBottom: 4, fontSize: 12, fontWeight: 600 }}>
-              <span>Additional Photos</span>
+              <span>Additional photos</span>
               <span style={{ color: "rgba(148,163,184,0.9)", marginLeft: 4 }}>(optional)</span>
             </div>
-            <label
-              style={{
-                display: "block",
-                borderRadius: 16,
-                border: "1px dashed rgba(148,163,184,0.6)",
-                background: "rgba(15,23,42,0.7)",
-                padding: 12,
-                cursor: "pointer",
-              }}
-            >
+            <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
               <input
-                type="file"
-                accept="image/*"
-                multiple
-                style={{ display: "none" }}
-                onChange={async (e) => {
-                  await pickExtraPhotos(e.target.files);
+                value={extraDraft}
+                onChange={(e) => setExtraDraft(e.target.value)}
+                placeholder="https://… another image URL"
+                style={{
+                  flex: 1,
+                  padding: "10px 12px",
+                  borderRadius: 12,
+                  border: "1px solid rgba(148,163,184,0.4)",
+                  background: "rgba(15,23,42,0.85)",
+                  color: "#e5e7eb",
+                  fontSize: 13,
                 }}
               />
-              <div
+              <button
+                type="button"
+                onClick={() => {
+                  const err = imageRefError("Image URL", extraDraft, true);
+                  if (err) {
+                    pushAdminToast("error", err);
+                    return;
+                  }
+                  setState((prev) => ({
+                    ...prev,
+                    extraImages: [...(prev.extraImages ?? []), extraDraft.trim()],
+                  }));
+                  setExtraDraft("");
+                }}
                 style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  padding: "14px 8px",
-                  gap: 6,
+                  padding: "10px 14px",
+                  borderRadius: 12,
+                  border: "1px solid rgba(148,163,184,0.45)",
+                  background: "rgba(59,130,246,0.2)",
+                  color: "#e5e7eb",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
                 }}
               >
-                <div style={{ fontSize: 18 }}>🖼️</div>
-                <div style={{ fontSize: 13, color: "#e5e7eb" }}>
-                  Click to upload additional photos
+                Add URL
+              </button>
+            </div>
+            {(state.extraImages ?? []).map((_, idx) =>
+              errors[`extra_${idx}`] ? (
+                <div key={`err_${idx}`} style={{ fontSize: 11, color: "#f87171", marginBottom: 4 }}>
+                  {errors[`extra_${idx}`]}
                 </div>
-                <div style={{ fontSize: 11, color: "rgba(148,163,184,0.9)" }}>
-                  Select multiple photos
-                </div>
-              </div>
-            </label>
+              ) : null,
+            )}
             {(state.extraImages?.length ?? 0) > 0 && (
               <div
                 style={{
@@ -2083,6 +1996,11 @@ function ExperienceModal({
   const [state, setState] = useState(item);
   const [saving, setSaving] = useState(false);
   const submit = async () => {
+    const le = imageRefError("Logo URL", state.logo, false);
+    if (le) {
+      pushAdminToast("error", le);
+      return;
+    }
     setSaving(true);
     try {
       await Promise.resolve(onSave(state));
@@ -2100,14 +2018,10 @@ function ExperienceModal({
         <input type="checkbox" checked={state.present} onChange={(e) => setState({ ...state, present: e.target.checked })} /> Present
       </label>
       <textarea value={state.description} onChange={(e) => setState({ ...state, description: e.target.value })} placeholder="Description" style={{ width: "100%", minHeight: 80, marginBottom: 8 }} />
-      <input
-        type="file"
-        accept="image/*"
-        onChange={async (e) => {
-          const f = e.target.files?.[0];
-          if (!f) return;
-          setState({ ...state, logo: await readImageFileAsCompressedDataUrl(f) });
-        }}
+      <ImageUrlField
+        label="Company logo URL"
+        value={state.logo}
+        onChange={(v) => setState({ ...state, logo: v })}
       />
       <button type="button" disabled={saving} onClick={() => void submit()} style={{ marginTop: 10 }}>
         {saving ? "Saving..." : "Save"}
@@ -2128,6 +2042,11 @@ function EducationModal({
   const [state, setState] = useState(item);
   const [saving, setSaving] = useState(false);
   const submit = async () => {
+    const le = imageRefError("Logo URL", state.logo, false);
+    if (le) {
+      pushAdminToast("error", le);
+      return;
+    }
     setSaving(true);
     try {
       await Promise.resolve(onSave(state));
@@ -2145,14 +2064,10 @@ function EducationModal({
         <input type="checkbox" checked={state.present} onChange={(e) => setState({ ...state, present: e.target.checked })} /> Present
       </label>
       <textarea value={state.description} onChange={(e) => setState({ ...state, description: e.target.value })} placeholder="Description" style={{ width: "100%", minHeight: 80, marginBottom: 8 }} />
-      <input
-        type="file"
-        accept="image/*"
-        onChange={async (e) => {
-          const f = e.target.files?.[0];
-          if (!f) return;
-          setState({ ...state, logo: await readImageFileAsCompressedDataUrl(f) });
-        }}
+      <ImageUrlField
+        label="Institution logo URL"
+        value={state.logo}
+        onChange={(v) => setState({ ...state, logo: v })}
       />
       <button type="button" disabled={saving} onClick={() => void submit()} style={{ marginTop: 10 }}>
         {saving ? "Saving..." : "Save"}

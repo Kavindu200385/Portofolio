@@ -1,25 +1,24 @@
 // @ts-nocheck
 /**
  * Single Vercel serverless function for all /api/* routes (Hobby plan: max 12 functions).
- * Helpers live in ../lib/api/* (not under /api, so they are not separate functions).
- * Use when Vercel Root Directory is `frontend`. If the project root is the repo root, the handler is `../../api/[...path].ts` instead.
+ * Deploy with Vercel Root Directory = repository root (empty). Code under `frontend/lib`, `frontend/models`.
  */
 import mongoose from "mongoose";
-import { connectDB } from "../lib/mongodb.js";
-import { apiPathSegments, requireAdmin } from "../lib/api/helpers.js";
-import { normalizeProjectBody } from "../lib/api/projectBody.js";
-import { normalizeSkillBody } from "../lib/api/skillBody.js";
-import { experienceFromClient } from "../lib/api/experienceBody.js";
-import { educationFromClient } from "../lib/api/educationBody.js";
-import { aboutFromClient, contactFromClient, heroFromClient } from "../lib/api/singletonPayloads.js";
-import { rejectDataImageField, rejectDataImagesInStringArray } from "../lib/api/imagePolicy.js";
-import About from "../models/About.js";
-import Contact from "../models/Contact.js";
-import Education from "../models/Education.js";
-import Experience from "../models/Experience.js";
-import Hero from "../models/Hero.js";
-import Project from "../models/Project.js";
-import Skill from "../models/Skill.js";
+import { connectDB } from "../frontend/lib/mongodb.js";
+import { apiPathSegments, requireAdmin } from "../frontend/lib/api/helpers.js";
+import { normalizeProjectBody } from "../frontend/lib/api/projectBody.js";
+import { normalizeSkillBody } from "../frontend/lib/api/skillBody.js";
+import { experienceFromClient } from "../frontend/lib/api/experienceBody.js";
+import { educationFromClient } from "../frontend/lib/api/educationBody.js";
+import { aboutFromClient, contactFromClient, heroFromClient } from "../frontend/lib/api/singletonPayloads.js";
+import { rejectDataImageField, rejectDataImagesInStringArray } from "../frontend/lib/api/imagePolicy.js";
+import About from "../frontend/models/About.js";
+import Contact from "../frontend/models/Contact.js";
+import Education from "../frontend/models/Education.js";
+import Experience from "../frontend/models/Experience.js";
+import Hero from "../frontend/models/Hero.js";
+import Project from "../frontend/models/Project.js";
+import Skill from "../frontend/models/Skill.js";
 
 function invalidMongoIdResponse(res: any) {
   return res.status(400).json({
@@ -74,7 +73,7 @@ export default async function handler(req: any, res: any) {
         return res.status(405).json({ error: "Method not allowed" });
       }
       if (!requireAdmin(req, res)) return;
-      const { seedDefaultPortfolioIfEmpty } = await import("../lib/seedDefaultPortfolio.js");
+      const { seedDefaultPortfolioIfEmpty } = await import("../frontend/lib/seedDefaultPortfolio.js");
       const summary = await seedDefaultPortfolioIfEmpty();
       return res.status(200).json({ ok: true, summary });
     }
