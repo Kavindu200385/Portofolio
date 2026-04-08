@@ -130,4 +130,38 @@ export const defaultProjects: ProjectItem[] = [
   extraImages: [],
   featured: false,
   },
+
+  {
+    id: "p7",
+    name: "Sales Installment Management System",
+    type: "Group",
+    shortDescription:
+      "A full-stack sales and installment management platform with RBAC, payments, reminders, and reporting.",
+    longDescription:
+      "Sales Installment Management System is a full-stack platform with a NestJS backend API and a React 18 + Vite frontend, built to manage installment-based sales operations end to end. It includes JWT authentication with role-based access control (Owner, Super Admin, Admin, Ref), user and customer management, pending registration approvals, payment tracking and history, card issue tracking and returns, ref summaries, scheduled reminders, settings management, and reporting dashboards with analytics. The backend uses TypeORM with MySQL by default (PostgreSQL supported), plus Passport JWT, class-validator, and Swagger, while the frontend uses TypeScript, React Router, Tailwind CSS, Radix UI, Recharts, React Hook Form, and Zod for a modern and maintainable experience.",
+    thumbnail: "/photos/sales-installment-management-system.png",
+    githubLink: "#",
+    liveDemoLink: "#",
+    techStack: [
+      "NestJS",
+      "TypeORM",
+      "MySQL",
+      "PostgreSQL",
+      "JWT",
+      "Passport",
+      "class-validator",
+      "Swagger",
+      "React 18",
+      "TypeScript",
+      "Vite",
+      "React Router",
+      "Tailwind CSS",
+      "Radix UI",
+      "Recharts",
+      "React Hook Form",
+      "Zod",
+    ],
+    extraImages: [],
+    featured: false,
+  },
 ];

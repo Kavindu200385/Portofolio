@@ -34,6 +34,14 @@ function ProjectCard({
 }) {
   const [hov, setHov] = useState(false);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const hasGithubLink =
+    typeof project.githubLink === "string" &&
+    project.githubLink.trim() !== "" &&
+    project.githubLink !== "#";
+  const hasLiveDemoLink =
+    typeof project.liveDemoLink === "string" &&
+    project.liveDemoLink.trim() !== "" &&
+    project.liveDemoLink !== "#";
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -178,27 +186,77 @@ function ProjectCard({
         <motion.div
           animate={{ opacity: hov ? 1 : 0, y: hov ? 0 : 6 }}
           transition={{ duration: 0.2 }}
+          style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}
         >
-          <a
-            href={project.liveDemoLink || project.githubLink || "#"}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "9px 20px",
-              borderRadius: "10px",
-              background: "linear-gradient(135deg, #4F8EF7, #7C3AED)",
-              fontFamily: "'Inter', sans-serif",
-              fontSize: "13px",
-              fontWeight: 500,
-              color: "#fff",
-              textDecoration: "none",
-              letterSpacing: "-0.01em",
-            }}
-          >
-            View Project
-            <span style={{ fontSize: "14px" }}>↗</span>
-          </a>
+          {hasGithubLink ? (
+            <a
+              href={project.githubLink}
+              target="_blank"
+              rel="noreferrer"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "9px 20px",
+                borderRadius: "10px",
+                background: "linear-gradient(135deg, #4F8EF7, #7C3AED)",
+                fontFamily: "'Inter', sans-serif",
+                fontSize: "13px",
+                fontWeight: 500,
+                color: "#fff",
+                textDecoration: "none",
+                letterSpacing: "-0.01em",
+              }}
+            >
+              View Project
+              <span style={{ fontSize: "14px" }}>↗</span>
+            </a>
+          ) : (
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "9px 20px",
+                borderRadius: "10px",
+                background: "rgba(255,255,255,0.08)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                fontFamily: "'Inter', sans-serif",
+                fontSize: "13px",
+                fontWeight: 500,
+                color: "rgba(255,255,255,0.6)",
+                letterSpacing: "-0.01em",
+              }}
+            >
+              Private Project
+            </span>
+          )}
+
+          {hasLiveDemoLink ? (
+            <a
+              href={project.liveDemoLink}
+              target="_blank"
+              rel="noreferrer"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "9px 20px",
+                borderRadius: "10px",
+                background: "rgba(255,255,255,0.08)",
+                border: "1px solid rgba(255,255,255,0.15)",
+                fontFamily: "'Inter', sans-serif",
+                fontSize: "13px",
+                fontWeight: 500,
+                color: "#fff",
+                textDecoration: "none",
+                letterSpacing: "-0.01em",
+              }}
+            >
+              Live Preview
+              <span style={{ fontSize: "14px" }}>↗</span>
+            </a>
+          ) : null}
         </motion.div>
       </div>
     </motion.div>
