@@ -105,4 +105,29 @@ export const defaultProjects: ProjectItem[] = [
     extraImages: [],
     featured: true,
   },
+
+  {
+    id: "p6",
+  name: "Furni - Furniture Ecommerce Website (Frontend Demo)",
+  type: "Individual",
+  shortDescription:
+      "A modern, responsive furniture ecommerce frontend built with React, TypeScript, and Tailwind CSS.",
+  longDescription:
+      "Furni is a modern furniture ecommerce website built as a frontend-only demo using React 18, TypeScript, and Tailwind CSS. It features a clean, responsive UI, mock data for products, a shopping cart experience, mock authentication with demo accounts, and a product catalog with filtering to explore items by category. The app also includes a demo admin dashboard plus supporting pages like About, Services, Blog, and Contact, all wired with React Router and React Query for a smooth, app-like experience without requiring any backend.",
+  thumbnail: "/photos/furni.jpeg",
+  githubLink: "https://github.com/Kavindu200385/Furni-Furniture-Ecommerce-Website",
+  liveDemoLink: "#",
+  techStack: [
+      "React",
+      "TypeScript",
+      "Tailwind CSS",
+      "Radix UI",
+      "Vite",
+      "Lucide React",
+      "React Query",
+      "React Router",
+  ],
+  extraImages: [],
+  featured: false,
+  },
 ];
