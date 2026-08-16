@@ -11,7 +11,7 @@ function readFileAsDataUrl(file: File): Promise<string> {
 
 export async function uploadHeroImage(file: File): Promise<string> {
   const dataUrl = await readFileAsDataUrl(file);
-  const res = await fetch(apiUrl("/api/admin/upload-image"), {
+  const res = await fetch(apiUrl("/api/admin-upload-image"), {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },

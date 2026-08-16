@@ -7,7 +7,7 @@ export async function uploadHeroVideo(
 ): Promise<string> {
   const blob = await upload(file.name, file, {
     access: "public",
-    handleUploadUrl: apiUrl("/api/admin/hero-video-upload"),
+    handleUploadUrl: apiUrl("/api/admin-hero-video-upload"),
     onUploadProgress: (event) => onProgress?.(event.percentage),
   });
   return blob.url;

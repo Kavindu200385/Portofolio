@@ -28,7 +28,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const checkSession = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(apiUrl("/api/admin/me"), { credentials: "include" });
+      const res = await fetch(apiUrl("/api/admin-me"), { credentials: "include" });
       const json = await res.json();
       setAuthenticated(Boolean(json?.authenticated));
       setEmail(json?.email ?? null);
@@ -45,7 +45,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   }, [checkSession]);
 
   const login = useCallback(async (loginEmail: string, password: string) => {
-    const res = await fetch(apiUrl("/api/admin/login"), {
+    const res = await fetch(apiUrl("/api/admin-login"), {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -60,7 +60,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
-    await fetch(apiUrl("/api/admin/logout"), { method: "POST", credentials: "include" });
+    await fetch(apiUrl("/api/admin-logout"), { method: "POST", credentials: "include" });
     setAuthenticated(false);
     setEmail(null);
   }, []);

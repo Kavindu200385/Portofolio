@@ -78,7 +78,12 @@ export default async function handler(req: any, res: any) {
     }
 
     // —— Admin auth: login / logout / session check (no DB connection required) ——
-    if (seg[0] === "admin" && seg[1] === "login" && seg.length === 2 && method === "POST") {
+    // NOTE: kept as single path segments (admin-login, not admin/login) — this Vercel
+    // deployment's catch-all routing 404s on 2+ segment /api/ paths at the platform level
+    // (reproducible even for pre-existing routes like /api/projects/reorder, survives a
+    // clean redeploy, and no dashboard-level rewrite explains it), so every admin route
+    // here is deliberately flattened to one segment to route around that platform issue.
+    if (seg[0] === "admin-login" && seg.length === 1 && method === "POST") {
       const { email, password } = req.body || {};
       const ok = await verifyAdminCredentials(email, password);
       if (!ok) {
@@ -89,12 +94,12 @@ export default async function handler(req: any, res: any) {
       return res.status(200).json({ ok: true });
     }
 
-    if (seg[0] === "admin" && seg[1] === "logout" && seg.length === 2 && method === "POST") {
+    if (seg[0] === "admin-logout" && seg.length === 1 && method === "POST") {
       clearSessionCookie(res);
       return res.status(200).json({ ok: true });
     }
 
-    if (seg[0] === "admin" && seg[1] === "me" && seg.length === 2 && method === "GET") {
+    if (seg[0] === "admin-me" && seg.length === 1 && method === "GET") {
       const token = readSessionCookie(req);
       const payload = token ? await verifyAdminJwt(token) : null;
       if (!payload) {
@@ -104,7 +109,7 @@ export default async function handler(req: any, res: any) {
     }
 
     // —— Admin: image upload → Vercel Blob (public URL stored in MongoDB; no DB connection required) ——
-    if (seg[0] === "admin" && seg[1] === "upload-image" && seg.length === 2 && method === "POST") {
+    if (seg[0] === "admin-upload-image" && seg.length === 1 && method === "POST") {
       if (!(await requireAdminJwt(req, res))) return;
       const dataUrl = req.body?.dataUrl;
       if (typeof dataUrl !== "string") {
@@ -119,7 +124,7 @@ export default async function handler(req: any, res: any) {
     }
 
     // —— Admin: hero video upload → client-direct-to-Blob token endpoint (no DB connection required) ——
-    if (seg[0] === "admin" && seg[1] === "hero-video-upload" && seg.length === 2 && method === "POST") {
+    if (seg[0] === "admin-hero-video-upload" && seg.length === 1 && method === "POST") {
       const { handleUpload } = await import("@vercel/blob/client");
       try {
         const jsonResponse = await handleUpload({
@@ -150,7 +155,7 @@ export default async function handler(req: any, res: any) {
     await connectDB();
 
     // —— Admin: seed built-in defaults only into empty collections (never deletes) ——
-    if (seg[0] === "admin" && seg[1] === "seed-defaults") {
+    if (seg[0] === "admin-seed-defaults" && seg.length === 1) {
       if (method !== "POST") {
         res.setHeader("Allow", ["POST"]);
         return res.status(405).json({ error: "Method not allowed" });
