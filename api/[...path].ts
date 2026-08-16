@@ -100,6 +100,20 @@ export default async function handler(req: any, res: any) {
       });
     }
 
+    if (seg[0] === "admin-blob-check" && seg.length === 1 && method === "GET") {
+      try {
+        const { generateClientTokenFromReadWriteToken } = await import("@vercel/blob/client");
+        const token = await generateClientTokenFromReadWriteToken({
+          token: process.env.BLOB_READ_WRITE_TOKEN?.trim(),
+          pathname: "diagnostic-check.txt",
+          onUploadCompleted: { callbackUrl: "https://kavicode.vercel.app/api/admin-hero-video-upload" },
+        });
+        return res.status(200).json({ ok: true, tokenGenerated: Boolean(token) });
+      } catch (e: any) {
+        return res.status(200).json({ ok: false, error: e?.message || String(e) });
+      }
+    }
+
     // —— Admin auth: login / logout / session check (no DB connection required) ——
     // NOTE: kept as single path segments (admin-login, not admin/login) — this Vercel
     // deployment's catch-all routing 404s on 2+ segment /api/ paths at the platform level
