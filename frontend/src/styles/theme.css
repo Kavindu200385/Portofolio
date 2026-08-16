@@ -126,11 +126,6 @@
 
   body {
     @apply bg-background text-foreground;
-    cursor: none;
-  }
-
-  a, button, [data-cursor-hover] {
-    cursor: none;
   }
 
   /**
