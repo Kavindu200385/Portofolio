@@ -84,6 +84,7 @@ export default async function handler(req: any, res: any) {
       const email = process.env.ADMIN_EMAIL?.trim() ?? "";
       const hash = process.env.ADMIN_PASSWORD_HASH?.trim() ?? "";
       const jwt = process.env.JWT_SECRET?.trim() ?? "";
+      const blob = process.env.BLOB_READ_WRITE_TOKEN?.trim() ?? "";
       return res.status(200).json({
         emailConfigured: email.length > 0,
         emailLength: email.length,
@@ -94,6 +95,9 @@ export default async function handler(req: any, res: any) {
         hashPrefix: hash.slice(0, 4),
         jwtConfigured: jwt.length > 0,
         jwtLength: jwt.length,
+        blobConfigured: blob.length > 0,
+        blobLength: blob.length,
+        blobPrefix: blob.slice(0, 12),
       });
     }
 
