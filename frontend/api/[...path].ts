@@ -79,6 +79,24 @@ export default async function handler(req: any, res: any) {
       }
     }
 
+    // —— TEMP diagnostic: reports env var shape only, never actual secret values. Remove after debugging. ——
+    if (seg[0] === "admin-env-check" && seg.length === 1 && method === "GET") {
+      const email = process.env.ADMIN_EMAIL?.trim() ?? "";
+      const hash = process.env.ADMIN_PASSWORD_HASH?.trim() ?? "";
+      const jwt = process.env.JWT_SECRET?.trim() ?? "";
+      return res.status(200).json({
+        emailConfigured: email.length > 0,
+        emailLength: email.length,
+        emailDomain: email.includes("@") ? email.split("@")[1] : null,
+        hashConfigured: hash.length > 0,
+        hashLength: hash.length,
+        hashDollarCount: (hash.match(/\$/g) || []).length,
+        hashPrefix: hash.slice(0, 4),
+        jwtConfigured: jwt.length > 0,
+        jwtLength: jwt.length,
+      });
+    }
+
     // —— Admin auth: login / logout / session check (no DB connection required) ——
     // NOTE: kept as single path segments (admin-login, not admin/login) — this Vercel
     // deployment's catch-all routing 404s on 2+ segment /api/ paths at the platform level
