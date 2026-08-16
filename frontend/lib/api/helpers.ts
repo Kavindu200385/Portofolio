@@ -1,16 +1,5 @@
 // @ts-nocheck
 
-export function requireAdmin(req: any, res: any): boolean {
-  const secret = process.env.ADMIN_SECRET;
-  const header = req.headers["x-admin-secret"];
-  const v = Array.isArray(header) ? header[0] : header;
-  if (!secret || v !== secret) {
-    res.status(401).json({ error: "Unauthorized" });
-    return false;
-  }
-  return true;
-}
-
 /**
  * Path segments after /api (e.g. `projects`, `507f…` for PUT /api/projects/:id).
  * Vercel may set `req.url` to `/api/...`, `/...` (no /api), or a full URL — normalize all cases.

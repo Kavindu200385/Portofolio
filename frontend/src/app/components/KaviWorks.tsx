@@ -4,92 +4,46 @@ import { useRef, useState } from "react";
 import { motion, useInView } from "motion/react";
 import { SectionLabel } from "./KaviAbout";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
-import { usePortfolioData } from "../data/portfolioData";
-
-const BADGE_COLORS: Record<string, string> = {
-  Group: "#4F8EF7",
-  Individual: "#7C3AED",
-  Research: "#06b6d4",
-  Personal: "#10b981",
-};
+import { usePortfolioData, type ProjectItem } from "../data/portfolioData";
 
 function ProjectCard({
   project,
   index,
   inView,
 }: {
-  project: {
-    id: string;
-    name: string;
-    type: string;
-    shortDescription: string;
-    longDescription: string;
-    thumbnail: string;
-    githubLink: string;
-    liveDemoLink: string;
-    techStack: string[];
-  };
+  project: ProjectItem;
   index: number;
   inView: boolean;
 }) {
   const [hov, setHov] = useState(false);
-  const [tilt, setTilt] = useState({ x: 0, y: 0 });
-  const hasGithubLink =
-    typeof project.githubLink === "string" &&
-    project.githubLink.trim() !== "" &&
-    project.githubLink !== "#";
-  const hasLiveDemoLink =
-    typeof project.liveDemoLink === "string" &&
-    project.liveDemoLink.trim() !== "" &&
-    project.liveDemoLink !== "#";
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientY - rect.top) / rect.height - 0.5) * 10;
-    const y = ((e.clientX - rect.left) / rect.width - 0.5) * -10;
-    setTilt({ x, y });
-  };
-
-  const typeKey = project.type as keyof typeof BADGE_COLORS;
-  const badgeColor = BADGE_COLORS[typeKey] ?? "#4F8EF7";
+  const caseStudyHref =
+    (project.liveDemoLink && project.liveDemoLink !== "#" && project.liveDemoLink) ||
+    (project.githubLink && project.githubLink !== "#" && project.githubLink) ||
+    "";
+  const categoryTags = [project.type, ...project.techStack.slice(0, 2)];
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 40 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{
-        duration: 0.6,
-        delay: 0.1 + index * 0.08,
-        ease: [0.16, 1, 0.3, 1],
-      }}
+      transition={{ duration: 0.6, delay: 0.1 + index * 0.08, ease: [0.16, 1, 0.3, 1] }}
       onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => {
-        setHov(false);
-        setTilt({ x: 0, y: 0 });
-      }}
-      onMouseMove={handleMouseMove}
-      style={{
-        borderRadius: "24px",
-        overflow: "hidden",
-        background: "rgba(255,255,255,0.04)",
-        border: `1px solid ${hov ? "rgba(79,142,247,0.25)" : "rgba(255,255,255,0.07)"}`,
-        backdropFilter: "blur(20px)",
-        WebkitBackdropFilter: "blur(20px)",
-        cursor: "none",
-        transition: "border-color 200ms ease",
-        transform: hov
-          ? `perspective(800px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) scale(1.02)`
-          : "perspective(800px) rotateX(0deg) rotateY(0deg) scale(1)",
-        boxShadow: hov
-          ? "0 24px 48px rgba(0,0,0,0.4), 0 0 0 1px rgba(79,142,247,0.1)"
-          : "0 4px 16px rgba(0,0,0,0.2)",
-        transitionProperty: "transform, box-shadow, border-color",
-        transitionDuration: "250ms",
-        transitionTimingFunction: "ease-out",
-      }}
+      onMouseLeave={() => setHov(false)}
     >
-      {/* Image */}
-      <div style={{ position: "relative", height: "200px", overflow: "hidden" }}>
+      {/* Preview image with gradient-tinted background + hover overlay */}
+      <div
+        style={{
+          position: "relative",
+          borderRadius: "24px",
+          overflow: "hidden",
+          aspectRatio: "16/10",
+          background: "linear-gradient(135deg, rgba(79,142,247,0.18), rgba(124,58,237,0.18))",
+          cursor: caseStudyHref ? "pointer" : "default",
+        }}
+        onClick={() => {
+          if (caseStudyHref) window.open(caseStudyHref, "_blank", "noreferrer");
+        }}
+      >
         <ImageWithFallback
           src={project.thumbnail}
           alt={project.name}
@@ -97,168 +51,108 @@ function ProjectCard({
             width: "100%",
             height: "100%",
             objectFit: "cover",
-            transform: hov ? "scale(1.05)" : "scale(1)",
+            transform: hov ? "scale(1.04)" : "scale(1)",
             transition: "transform 400ms ease",
           }}
         />
-        {/* Gradient overlay */}
-        <div
+        {/* Dark overlay + case-study pill on hover */}
+        <motion.div
+          animate={{ opacity: hov ? 1 : 0 }}
+          transition={{ duration: 0.2 }}
           style={{
             position: "absolute",
             inset: 0,
-            background:
-              "linear-gradient(to bottom, transparent 40%, rgba(8,8,16,0.85) 100%)",
-          }}
-        />
-        {/* Badge */}
-        <div
-          style={{
-            position: "absolute",
-            top: "16px",
-            left: "16px",
-            padding: "4px 12px",
-            borderRadius: "100px",
-            background: `${badgeColor}22`,
-            border: `1px solid ${badgeColor}55`,
-            fontFamily: "'Inter', sans-serif",
-            fontSize: "11px",
-            fontWeight: 600,
-            color: badgeColor,
-            letterSpacing: "0.06em",
-            textTransform: "uppercase" as const,
+            background: "rgba(8,8,16,0.55)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
-          {project.type}
-        </div>
-      </div>
-
-      {/* Content */}
-      <div style={{ padding: "20px 24px 24px" }}>
-        <div
-          style={{
-            fontFamily: "'Plus Jakarta Sans', sans-serif",
-            fontSize: "18px",
-            fontWeight: 700,
-            color: "#fff",
-            marginBottom: "8px",
-            letterSpacing: "-0.02em",
-          }}
-        >
-          {project.name}
-        </div>
-        <p
-          style={{
-            fontFamily: "'Inter', sans-serif",
-            fontSize: "13px",
-            lineHeight: 1.65,
-            color: "rgba(255,255,255,0.5)",
-            margin: "0 0 16px 0",
-          }}
-        >
-          {project.shortDescription || project.longDescription}
-        </p>
-
-        {/* Stack tags */}
-        <div
-          style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "20px" }}
-        >
-          {project.techStack.map((s) => (
-            <span
-              key={s}
-              style={{
-                padding: "3px 10px",
-                borderRadius: "6px",
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                fontFamily: "'Inter', sans-serif",
-                fontSize: "11px",
-                fontWeight: 500,
-                color: "rgba(255,255,255,0.5)",
-                letterSpacing: "0.02em",
-              }}
-            >
-              {s}
-            </span>
-          ))}
-        </div>
-
-        {/* View button — appears on hover */}
-        <motion.div
-          animate={{ opacity: hov ? 1 : 0, y: hov ? 0 : 6 }}
-          transition={{ duration: 0.2 }}
-          style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}
-        >
-          {hasGithubLink ? (
-            <a
-              href={project.githubLink}
-              target="_blank"
-              rel="noreferrer"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "8px",
-                padding: "9px 20px",
-                borderRadius: "10px",
-                background: "linear-gradient(135deg, #4F8EF7, #7C3AED)",
-                fontFamily: "'Inter', sans-serif",
-                fontSize: "13px",
-                fontWeight: 500,
-                color: "#fff",
-                textDecoration: "none",
-                letterSpacing: "-0.01em",
-              }}
-            >
-              View Project
-              <span style={{ fontSize: "14px" }}>↗</span>
-            </a>
-          ) : (
+          {caseStudyHref ? (
             <span
               style={{
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "8px",
-                padding: "9px 20px",
-                borderRadius: "10px",
-                background: "rgba(255,255,255,0.08)",
-                border: "1px solid rgba(255,255,255,0.12)",
+                padding: "12px 26px",
+                borderRadius: "100px",
+                background: "#fff",
                 fontFamily: "'Inter', sans-serif",
-                fontSize: "13px",
-                fontWeight: 500,
-                color: "rgba(255,255,255,0.6)",
+                fontSize: "14px",
+                fontWeight: 600,
+                color: "#080810",
                 letterSpacing: "-0.01em",
               }}
             >
-              Private Project
+              View case study →
             </span>
-          )}
-
-          {hasLiveDemoLink ? (
-            <a
-              href={project.liveDemoLink}
-              target="_blank"
-              rel="noreferrer"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "8px",
-                padding: "9px 20px",
-                borderRadius: "10px",
-                background: "rgba(255,255,255,0.08)",
-                border: "1px solid rgba(255,255,255,0.15)",
-                fontFamily: "'Inter', sans-serif",
-                fontSize: "13px",
-                fontWeight: 500,
-                color: "#fff",
-                textDecoration: "none",
-                letterSpacing: "-0.01em",
-              }}
-            >
-              Live Preview
-              <span style={{ fontSize: "14px" }}>↗</span>
-            </a>
           ) : null}
         </motion.div>
       </div>
+
+      {/* Meta row: category tags left, (date range TBD) right */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginTop: "18px",
+          gap: "12px",
+          flexWrap: "wrap",
+        }}
+      >
+        <div
+          style={{
+            fontFamily: "'Inter', sans-serif",
+            fontSize: "12px",
+            fontWeight: 600,
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+            color: "rgba(255,255,255,0.4)",
+          }}
+        >
+          {categoryTags.join(" · ")}
+        </div>
+        {project.featured ? (
+          <div
+            style={{
+              fontFamily: "'Inter', sans-serif",
+              fontSize: "12px",
+              color: "rgba(255,255,255,0.3)",
+              letterSpacing: "0.04em",
+            }}
+          >
+            Featured
+          </div>
+        ) : null}
+      </div>
+
+      {/* Title */}
+      <div
+        style={{
+          fontFamily: "'Plus Jakarta Sans', sans-serif",
+          fontSize: "22px",
+          fontWeight: 700,
+          color: "#fff",
+          marginTop: "10px",
+          letterSpacing: "-0.02em",
+        }}
+      >
+        {project.name}
+      </div>
+
+      {/* One-line result/impact */}
+      <p
+        style={{
+          fontFamily: "'Inter', sans-serif",
+          fontSize: "14px",
+          lineHeight: 1.6,
+          color: "rgba(255,255,255,0.5)",
+          margin: "6px 0 0 0",
+        }}
+      >
+        {project.shortDescription || project.longDescription}
+      </p>
     </motion.div>
   );
 }
@@ -267,11 +161,8 @@ export function KaviWorks() {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
   const { data, loading } = usePortfolioData();
-  const projects = [
-    // Featured projects first, then the rest, while preserving relative order
-    ...data.projects.filter((p) => p.featured),
-    ...data.projects.filter((p) => !p.featured),
-  ];
+  const featured = data.projects.filter((p) => p.featured);
+  const projects = featured.length > 0 ? featured : data.projects;
 
   return (
     <section
@@ -280,7 +171,7 @@ export function KaviWorks() {
       style={{ padding: "120px 24px", opacity: loading ? 0.92 : 1, transition: "opacity 0.35s ease" }}
     >
       <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-        <SectionLabel label="Selected Works" delay={0} inView={inView} />
+        <SectionLabel label="Portfolio" delay={0} inView={inView} />
 
         <div
           style={{
@@ -289,7 +180,7 @@ export function KaviWorks() {
             alignItems: "flex-end",
             flexWrap: "wrap",
             gap: "16px",
-            margin: "20px 0 52px 0",
+            margin: "20px 0 56px 0",
           }}
         >
           <motion.h2
@@ -305,7 +196,7 @@ export function KaviWorks() {
               margin: 0,
             }}
           >
-            Things I've Built
+            Selected work
           </motion.h2>
           <motion.p
             initial={{ opacity: 0 }}
@@ -314,20 +205,22 @@ export function KaviWorks() {
             style={{
               fontFamily: "'Inter', sans-serif",
               fontSize: "14px",
-              color: "rgba(255,255,255,0.3)",
+              color: "rgba(255,255,255,0.4)",
               margin: 0,
+              textAlign: "right",
+              maxWidth: "360px",
             }}
           >
-            {projects.length} projects
+            Work I'm most proud of — projects I led that shipped.
           </motion.p>
         </div>
 
-        {/* 3-column masonry-style grid */}
+        {/* 2-column grid */}
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: "20px",
+            gridTemplateColumns: "repeat(2, 1fr)",
+            gap: "48px 32px",
           }}
           className="works-grid"
         >
@@ -338,19 +231,12 @@ export function KaviWorks() {
       </div>
 
       <style>{`
-        @media (max-width: 1024px) {
-          .works-grid {
-            grid-template-columns: repeat(2, 1fr) !important;
-          }
-        }
         @media (max-width: 768px) {
-          #works {
-            padding: 80px 24px !important;
-          }
-        }
-        @media (max-width: 640px) {
           .works-grid {
             grid-template-columns: 1fr !important;
+          }
+          #works {
+            padding: 80px 24px !important;
           }
         }
         @media (max-width: 480px) {

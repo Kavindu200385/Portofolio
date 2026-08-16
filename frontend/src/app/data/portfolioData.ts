@@ -89,6 +89,7 @@ export type HeroData = {
   cta2Label: string;
   cta2Link: string;
   heroPhoto: string;
+  heroVideo: string;
 };
 
 export type ContactData = {

@@ -6,13 +6,26 @@
  */
 import mongoose from "mongoose";
 import { connectDB } from "../lib/mongodb.js";
-import { apiPathSegments, requireAdmin } from "../lib/api/helpers.js";
+import { apiPathSegments } from "../lib/api/helpers.js";
+import {
+  requireAdminJwt,
+  verifyAdminCredentials,
+  signAdminJwt,
+  verifyAdminJwt,
+  readSessionCookie,
+  setSessionCookie,
+  clearSessionCookie,
+} from "../lib/api/auth.js";
 import { normalizeProjectBody } from "../lib/api/projectBody.js";
 import { normalizeSkillBody } from "../lib/api/skillBody.js";
 import { experienceFromClient } from "../lib/api/experienceBody.js";
 import { educationFromClient } from "../lib/api/educationBody.js";
 import { aboutFromClient, contactFromClient, heroFromClient } from "../lib/api/singletonPayloads.js";
-import { rejectDataImageField, rejectDataImagesInStringArray } from "../lib/api/imagePolicy.js";
+import {
+  rejectDataImageField,
+  rejectDataImagesInStringArray,
+  rejectDataVideoField,
+} from "../lib/api/imagePolicy.js";
 import About from "../models/About.js";
 import Contact from "../models/Contact.js";
 import Education from "../models/Education.js";
@@ -65,9 +78,35 @@ export default async function handler(req: any, res: any) {
       }
     }
 
+    // —— Admin auth: login / logout / session check (no DB connection required) ——
+    if (seg[0] === "admin" && seg[1] === "login" && seg.length === 2 && method === "POST") {
+      const { email, password } = req.body || {};
+      const ok = await verifyAdminCredentials(email, password);
+      if (!ok) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+      const token = await signAdminJwt(String(email).trim().toLowerCase());
+      setSessionCookie(res, token);
+      return res.status(200).json({ ok: true });
+    }
+
+    if (seg[0] === "admin" && seg[1] === "logout" && seg.length === 2 && method === "POST") {
+      clearSessionCookie(res);
+      return res.status(200).json({ ok: true });
+    }
+
+    if (seg[0] === "admin" && seg[1] === "me" && seg.length === 2 && method === "GET") {
+      const token = readSessionCookie(req);
+      const payload = token ? await verifyAdminJwt(token) : null;
+      if (!payload) {
+        return res.status(200).json({ authenticated: false });
+      }
+      return res.status(200).json({ authenticated: true, email: payload.sub });
+    }
+
     // —— Admin: image upload → Vercel Blob (public URL stored in MongoDB; no DB connection required) ——
     if (seg[0] === "admin" && seg[1] === "upload-image" && seg.length === 2 && method === "POST") {
-      if (!requireAdmin(req, res)) return;
+      if (!(await requireAdminJwt(req, res))) return;
       const dataUrl = req.body?.dataUrl;
       if (typeof dataUrl !== "string") {
         return res.status(400).json({ error: "Expected JSON body { dataUrl: string }" });
@@ -80,6 +119,35 @@ export default async function handler(req: any, res: any) {
       return res.status(200).json({ url: result.url });
     }
 
+    // —— Admin: hero video upload → client-direct-to-Blob token endpoint (no DB connection required) ——
+    if (seg[0] === "admin" && seg[1] === "hero-video-upload" && seg.length === 2 && method === "POST") {
+      const { handleUpload } = await import("@vercel/blob/client");
+      try {
+        const jsonResponse = await handleUpload({
+          body: req.body,
+          request: req,
+          onBeforeGenerateToken: async () => {
+            const ok = await requireAdminJwt(req, res);
+            if (!ok) {
+              throw new Error("Unauthorized");
+            }
+            return {
+              allowedContentTypes: ["video/mp4", "video/webm", "video/ogg"],
+              maximumSizeInBytes: 75 * 1024 * 1024,
+              addRandomSuffix: true,
+            };
+          },
+          onUploadCompleted: async () => {
+            // no-op: the client's own subsequent PUT /api/hero call carries the resulting URL
+          },
+        });
+        return res.status(200).json(jsonResponse);
+      } catch (e: any) {
+        if (res.headersSent) return;
+        return res.status(400).json({ error: e?.message || "Upload failed" });
+      }
+    }
+
     await connectDB();
 
     // —— Admin: seed built-in defaults only into empty collections (never deletes) ——
@@ -88,7 +156,7 @@ export default async function handler(req: any, res: any) {
         res.setHeader("Allow", ["POST"]);
         return res.status(405).json({ error: "Method not allowed" });
       }
-      if (!requireAdmin(req, res)) return;
+      if (!(await requireAdminJwt(req, res))) return;
       const { seedDefaultPortfolioIfEmpty } = await import("../lib/seedDefaultPortfolio.js");
       const summary = await seedDefaultPortfolioIfEmpty();
       return res.status(200).json({ ok: true, summary });
@@ -102,7 +170,7 @@ export default async function handler(req: any, res: any) {
           return res.status(200).json(list);
         }
         if (method === "POST") {
-          if (!requireAdmin(req, res)) return;
+          if (!(await requireAdminJwt(req, res))) return;
           const raw = normalizeProjectBody(req.body);
           const imgErr =
             rejectDataImageField("mainPhoto", raw.mainPhoto) ||
@@ -121,7 +189,7 @@ export default async function handler(req: any, res: any) {
           res.setHeader("Allow", ["PUT"]);
           return res.status(405).json({ error: "Method not allowed" });
         }
-        if (!requireAdmin(req, res)) return;
+        if (!(await requireAdminJwt(req, res))) return;
         const items = Array.isArray(req.body) ? req.body : req.body?.items;
         if (!Array.isArray(items)) {
           return res.status(400).json({ error: "Expected array of { id, order }" });
@@ -139,7 +207,7 @@ export default async function handler(req: any, res: any) {
           if (!mongoose.isValidObjectId(id)) return invalidMongoIdResponse(res);
         }
         if (method === "PUT") {
-          if (!requireAdmin(req, res)) return;
+          if (!(await requireAdminJwt(req, res))) return;
           const raw = normalizeProjectBody(req.body);
           const imgErr =
             rejectDataImageField("mainPhoto", raw.mainPhoto) ||
@@ -150,7 +218,7 @@ export default async function handler(req: any, res: any) {
           return res.status(200).json(doc);
         }
         if (method === "DELETE") {
-          if (!requireAdmin(req, res)) return;
+          if (!(await requireAdminJwt(req, res))) return;
           const doc = await Project.findByIdAndDelete(id).lean();
           if (!doc) return res.status(404).json({ error: "Not found" });
           return res.status(200).json(doc);
@@ -168,7 +236,7 @@ export default async function handler(req: any, res: any) {
           return res.status(200).json(list);
         }
         if (method === "POST") {
-          if (!requireAdmin(req, res)) return;
+          if (!(await requireAdminJwt(req, res))) return;
           const raw = normalizeSkillBody(req.body);
           const ie = rejectDataImageField("icon", raw.icon);
           if (ie) return res.status(400).json({ error: ie });
@@ -185,7 +253,7 @@ export default async function handler(req: any, res: any) {
           res.setHeader("Allow", ["PUT"]);
           return res.status(405).json({ error: "Method not allowed" });
         }
-        if (!requireAdmin(req, res)) return;
+        if (!(await requireAdminJwt(req, res))) return;
         const items = Array.isArray(req.body) ? req.body : req.body?.items;
         if (!Array.isArray(items)) {
           return res.status(400).json({ error: "Expected array of { id, order }" });
@@ -203,7 +271,7 @@ export default async function handler(req: any, res: any) {
           if (!mongoose.isValidObjectId(id)) return invalidMongoIdResponse(res);
         }
         if (method === "PUT") {
-          if (!requireAdmin(req, res)) return;
+          if (!(await requireAdminJwt(req, res))) return;
           const raw = normalizeSkillBody(req.body);
           const ie = rejectDataImageField("icon", raw.icon);
           if (ie) return res.status(400).json({ error: ie });
@@ -212,7 +280,7 @@ export default async function handler(req: any, res: any) {
           return res.status(200).json(doc);
         }
         if (method === "DELETE") {
-          if (!requireAdmin(req, res)) return;
+          if (!(await requireAdminJwt(req, res))) return;
           const doc = await Skill.findByIdAndDelete(id).lean();
           if (!doc) return res.status(404).json({ error: "Not found" });
           return res.status(200).json(doc);
@@ -230,7 +298,7 @@ export default async function handler(req: any, res: any) {
           return res.status(200).json(list);
         }
         if (method === "POST") {
-          if (!requireAdmin(req, res)) return;
+          if (!(await requireAdminJwt(req, res))) return;
           const raw = experienceFromClient(req.body);
           const le = rejectDataImageField("companyLogo", raw.companyLogo);
           if (le) return res.status(400).json({ error: le });
@@ -247,7 +315,7 @@ export default async function handler(req: any, res: any) {
           res.setHeader("Allow", ["PUT"]);
           return res.status(405).json({ error: "Method not allowed" });
         }
-        if (!requireAdmin(req, res)) return;
+        if (!(await requireAdminJwt(req, res))) return;
         const items = Array.isArray(req.body) ? req.body : req.body?.items;
         if (!Array.isArray(items)) {
           return res.status(400).json({ error: "Expected array of { id, order }" });
@@ -265,7 +333,7 @@ export default async function handler(req: any, res: any) {
           if (!mongoose.isValidObjectId(id)) return invalidMongoIdResponse(res);
         }
         if (method === "PUT") {
-          if (!requireAdmin(req, res)) return;
+          if (!(await requireAdminJwt(req, res))) return;
           const raw = experienceFromClient(req.body);
           const le = rejectDataImageField("companyLogo", raw.companyLogo);
           if (le) return res.status(400).json({ error: le });
@@ -274,7 +342,7 @@ export default async function handler(req: any, res: any) {
           return res.status(200).json(doc);
         }
         if (method === "DELETE") {
-          if (!requireAdmin(req, res)) return;
+          if (!(await requireAdminJwt(req, res))) return;
           const doc = await Experience.findByIdAndDelete(id).lean();
           if (!doc) return res.status(404).json({ error: "Not found" });
           return res.status(200).json(doc);
@@ -292,7 +360,7 @@ export default async function handler(req: any, res: any) {
           return res.status(200).json(list);
         }
         if (method === "POST") {
-          if (!requireAdmin(req, res)) return;
+          if (!(await requireAdminJwt(req, res))) return;
           const raw = educationFromClient(req.body);
           const le = rejectDataImageField("institutionLogo", raw.institutionLogo);
           if (le) return res.status(400).json({ error: le });
@@ -309,7 +377,7 @@ export default async function handler(req: any, res: any) {
           res.setHeader("Allow", ["PUT"]);
           return res.status(405).json({ error: "Method not allowed" });
         }
-        if (!requireAdmin(req, res)) return;
+        if (!(await requireAdminJwt(req, res))) return;
         const items = Array.isArray(req.body) ? req.body : req.body?.items;
         if (!Array.isArray(items)) {
           return res.status(400).json({ error: "Expected array of { id, order }" });
@@ -327,7 +395,7 @@ export default async function handler(req: any, res: any) {
           if (!mongoose.isValidObjectId(id)) return invalidMongoIdResponse(res);
         }
         if (method === "PUT") {
-          if (!requireAdmin(req, res)) return;
+          if (!(await requireAdminJwt(req, res))) return;
           const raw = educationFromClient(req.body);
           const le = rejectDataImageField("institutionLogo", raw.institutionLogo);
           if (le) return res.status(400).json({ error: le });
@@ -336,7 +404,7 @@ export default async function handler(req: any, res: any) {
           return res.status(200).json(doc);
         }
         if (method === "DELETE") {
-          if (!requireAdmin(req, res)) return;
+          if (!(await requireAdminJwt(req, res))) return;
           const doc = await Education.findByIdAndDelete(id).lean();
           if (!doc) return res.status(404).json({ error: "Not found" });
           return res.status(200).json(doc);
@@ -353,7 +421,7 @@ export default async function handler(req: any, res: any) {
         return res.status(200).json(doc);
       }
       if (method === "PUT") {
-        if (!requireAdmin(req, res)) return;
+        if (!(await requireAdminJwt(req, res))) return;
         const payload = aboutFromClient(req.body);
         const ae = rejectDataImageField("profilePhoto", payload.profilePhoto);
         if (ae) return res.status(400).json({ error: ae });
@@ -370,10 +438,12 @@ export default async function handler(req: any, res: any) {
         return res.status(200).json(doc);
       }
       if (method === "PUT") {
-        if (!requireAdmin(req, res)) return;
+        if (!(await requireAdminJwt(req, res))) return;
         const payload = heroFromClient(req.body);
         const he = rejectDataImageField("heroPhoto", payload.heroPhoto);
         if (he) return res.status(400).json({ error: he });
+        const ve = rejectDataVideoField("heroVideo", payload.heroVideo);
+        if (ve) return res.status(400).json({ error: ve });
         const doc = await Hero.findOneAndUpdate({}, payload, { upsert: true, new: true }).lean();
         return res.status(200).json(doc);
       }
@@ -387,7 +457,7 @@ export default async function handler(req: any, res: any) {
         return res.status(200).json(doc);
       }
       if (method === "PUT") {
-        if (!requireAdmin(req, res)) return;
+        if (!(await requireAdminJwt(req, res))) return;
         const payload = contactFromClient(req.body);
         const doc = await Contact.findOneAndUpdate({}, payload, { upsert: true, new: true }).lean();
         return res.status(200).json(doc);

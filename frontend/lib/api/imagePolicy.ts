@@ -21,3 +21,11 @@ export function rejectDataImagesInStringArray(field: string, arr: unknown): stri
   }
   return null;
 }
+
+/** Stored videos should be hosted URLs (Vercel Blob, https/http) — not base64 data URIs. */
+export function rejectDataVideoField(field: string, value: unknown): string | null {
+  if (typeof value === "string" && value.trim().startsWith("data:video")) {
+    return `${field} must be a hosted video URL (https://...), not an embedded base64 video.`;
+  }
+  return null;
+}

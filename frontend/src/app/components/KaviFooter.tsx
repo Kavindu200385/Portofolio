@@ -68,7 +68,7 @@ export function KaviFooter() {
               color: "rgba(255,255,255,0.25)",
             }}
           >
-            © 2025 Kavindu Sandaruwan. All rights reserved.
+            © {new Date().getFullYear()} Kavindu Sandaruwan. All rights reserved. · Designed and built by Kavindu Sandaruwan
           </span>
         </div>
 

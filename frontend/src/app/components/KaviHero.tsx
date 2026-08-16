@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { usePortfolioData } from "../data/portfolioData";
 
@@ -13,67 +12,38 @@ function HeroChar({ char, delay }: { char: string; delay: number }) {
       transition={{ duration: 0.55, delay, ease: [0.16, 1, 0.3, 1] }}
       style={{ display: "inline-block", whiteSpace: char === " " ? "pre" : "normal" }}
     >
-      {char === " " ? "\u00A0" : char}
+      {char === " " ? " " : char}
     </motion.span>
   );
 }
 
 function StaggerText({ text, baseDelay = 0.3 }: { text: string; baseDelay?: number }) {
-  const chars = text.split("");
   let charIdx = 0;
+  const lines = text.split("\n");
   return (
     <>
-      {text.split("\n").map((line, li) => (
-        <span key={li} style={{ display: "block" }}>
-          {line.split("").map((char) => {
-            const delay = baseDelay + charIdx++ * 0.025;
-            return <HeroChar key={`${li}-${charIdx}`} char={char} delay={delay} />;
-          })}
+      {lines.map((line, li) => (
+        <span
+          key={li}
+          style={{
+            display: "block",
+            color: li === 0 ? "#fff" : "rgba(255,255,255,0.62)",
+          }}
+        >
+          {line.split(" ").map((word, wi, words) => (
+            <span key={wi}>
+              <span style={{ display: "inline-block", whiteSpace: "nowrap" }}>
+                {word.split("").map((char) => {
+                  const delay = baseDelay + charIdx++ * 0.025;
+                  return <HeroChar key={`${li}-${charIdx}`} char={char} delay={delay} />;
+                })}
+              </span>
+              {wi < words.length - 1 ? " " : ""}
+            </span>
+          ))}
         </span>
       ))}
     </>
-  );
-}
-
-function AuroraBlob({
-  color,
-  size,
-  x,
-  y,
-  duration,
-}: {
-  color: string;
-  size: number;
-  x: string;
-  y: string;
-  duration: number;
-}) {
-  return (
-    <motion.div
-      style={{
-        position: "absolute",
-        width: size,
-        height: size,
-        borderRadius: "50%",
-        background: color,
-        filter: `blur(${size * 0.45}px)`,
-        left: x,
-        top: y,
-        opacity: 0.18,
-        pointerEvents: "none",
-      }}
-      animate={{
-        x: [0, 30, -20, 10, 0],
-        y: [0, -20, 30, -10, 0],
-        scale: [1, 1.08, 0.96, 1.04, 1],
-      }}
-      transition={{
-        duration,
-        repeat: Infinity,
-        ease: "easeInOut",
-        times: [0, 0.25, 0.5, 0.75, 1],
-      }}
-    />
   );
 }
 
@@ -81,9 +51,12 @@ export function KaviHero() {
   const { data, loading } = usePortfolioData();
   const HEADING = data.hero.heading;
   const PROFILE_IMG = data.hero.heroPhoto;
+  const HERO_VIDEO = data.hero.heroVideo;
+  const prefersReducedMotion = useReducedMotion();
   const cta1Link = data.hero.cta1Link || "";
   const cta2Link = data.hero.cta2Link || "";
   const cta1IsAnchor = cta1Link.startsWith("#");
+  const cta2IsAnchor = cta2Link.startsWith("#");
   const cta1Click = () => {
     if (!cta1IsAnchor) {
       if (cta1Link) window.location.href = cta1Link;
@@ -91,6 +64,14 @@ export function KaviHero() {
     }
     document.getElementById(cta1Link.replace("#", ""))?.scrollIntoView({ behavior: "smooth" });
   };
+  const cta2Click = () => {
+    if (!cta2IsAnchor) {
+      if (cta2Link) window.location.href = cta2Link;
+      return;
+    }
+    document.getElementById(cta2Link.replace("#", ""))?.scrollIntoView({ behavior: "smooth" });
+  };
+
   return (
     <section
       id="intro"
@@ -100,62 +81,82 @@ export function KaviHero() {
         alignItems: "center",
         position: "relative",
         overflow: "hidden",
-        padding: "100px 24px 60px",
-        opacity: loading ? 0.9 : 1,
+        padding: "110px 24px 0",
+        background: "linear-gradient(150deg, #1d4fd8 0%, #4f7ff2 45%, #a9c8ff 100%)",
+        opacity: loading ? 0.94 : 1,
         transition: "opacity 0.35s ease",
       }}
     >
-      {/* Aurora background */}
+      {/* Soft light overlay for depth */}
       <div
-        style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden" }}
+        style={{
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
+          background:
+            "radial-gradient(ellipse 70% 60% at 15% 15%, rgba(255,255,255,0.16), transparent 60%)",
+        }}
+      />
+
+      {/* Right: full-bleed hero photo/video */}
+      <div
+        className="hero-photo-cutout"
+        style={{
+          position: "absolute",
+          right: 0,
+          bottom: 0,
+          height: "88%",
+          width: "44%",
+          pointerEvents: "none",
+        }}
       >
-        <AuroraBlob
-          color="radial-gradient(circle, #4F8EF7, transparent)"
-          size={700}
-          x="-10%"
-          y="-5%"
-          duration={14}
-        />
-        <AuroraBlob
-          color="radial-gradient(circle, #7C3AED, transparent)"
-          size={600}
-          x="60%"
-          y="20%"
-          duration={18}
-        />
-        <AuroraBlob
-          color="radial-gradient(circle, #06b6d4, transparent)"
-          size={400}
-          x="30%"
-          y="60%"
-          duration={12}
-        />
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          style={{
+            height: "100%",
+            width: "100%",
+            borderRadius: "32px 0 0 0",
+            overflow: "hidden",
+            boxShadow: "-24px 0 80px rgba(10,30,90,0.35)",
+          }}
+        >
+          {HERO_VIDEO && !prefersReducedMotion ? (
+            <video
+              src={HERO_VIDEO}
+              autoPlay
+              loop
+              muted
+              playsInline
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                objectPosition: "center 15%",
+              }}
+            />
+          ) : (
+            <ImageWithFallback
+              src={PROFILE_IMG}
+              alt="Kavindu Sandaruwan"
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                objectPosition: "center 15%",
+              }}
+            />
+          )}
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "linear-gradient(90deg, rgba(29,79,216,0.28), transparent 40%)",
+            }}
+          />
+        </motion.div>
       </div>
-
-      {/* Noise overlay */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          pointerEvents: "none",
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E")`,
-          opacity: 0.025,
-          backgroundSize: "256px 256px",
-        }}
-      />
-
-      {/* Grid dot overlay */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          pointerEvents: "none",
-          backgroundImage:
-            "radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px)",
-          backgroundSize: "40px 40px",
-          maskImage: "radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 100%)",
-        }}
-      />
 
       {/* Content */}
       <div
@@ -164,61 +165,18 @@ export function KaviHero() {
           maxWidth: "1200px",
           margin: "0 auto",
           width: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: "60px",
-          flexWrap: "wrap",
+          position: "relative",
+          zIndex: 2,
         }}
       >
-        {/* Left: text */}
-        <div className="hero-text" style={{ flex: "1 1 480px", minWidth: 0 }}>
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "6px 14px",
-              borderRadius: "100px",
-              background: "rgba(79,142,247,0.1)",
-              border: "1px solid rgba(79,142,247,0.25)",
-              marginBottom: "28px",
-            }}
-          >
-            <span
-              style={{
-                width: 7,
-                height: 7,
-                borderRadius: "50%",
-                background: "#4ade80",
-                boxShadow: "0 0 6px #4ade80",
-                display: "inline-block",
-              }}
-            />
-            <span
-              style={{
-                fontFamily: "'Inter', sans-serif",
-                fontSize: "12px",
-                fontWeight: 500,
-                color: "rgba(255,255,255,0.7)",
-                letterSpacing: "0.04em",
-              }}
-            >
-              Available for opportunities
-            </span>
-          </motion.div>
-
+        <div className="hero-text" style={{ maxWidth: "620px" }}>
           <h1
             style={{
               fontFamily: "'Plus Jakarta Sans', sans-serif",
-              fontSize: "clamp(38px, 6vw, 72px)",
+              fontSize: "clamp(38px, 6vw, 68px)",
               fontWeight: 800,
-              lineHeight: 1.1,
+              lineHeight: 1.08,
               letterSpacing: "-0.03em",
-              color: "#fff",
               margin: "0 0 24px 0",
             }}
           >
@@ -228,14 +186,14 @@ export function KaviHero() {
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 1.2 }}
+            transition={{ duration: 0.6, delay: 1.1 }}
             style={{
               fontFamily: "'Inter', sans-serif",
               fontSize: "clamp(15px, 1.8vw, 18px)",
               fontWeight: 400,
-              color: "rgba(255,255,255,0.55)",
+              color: "rgba(255,255,255,0.85)",
               lineHeight: 1.65,
-              maxWidth: "460px",
+              maxWidth: "440px",
               margin: "0 0 40px 0",
             }}
           >
@@ -245,194 +203,40 @@ export function KaviHero() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 1.4 }}
+            transition={{ duration: 0.6, delay: 1.3 }}
             className="hero-cta-row"
             style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}
           >
-            <GradientButton
-              onClick={cta1Click}
-              filled
-            >
+            <SolidButton onClick={cta1Click}>
               {data.hero.cta1Label}
-            </GradientButton>
-            <OutlineButton href={cta2Link || "#"}>{data.hero.cta2Label}</OutlineButton>
-          </motion.div>
-
-          {/* Stats */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.8, duration: 0.6 }}
-            className="hero-stats-row"
-            style={{
-              display: "flex",
-              gap: "32px",
-              marginTop: "56px",
-              paddingTop: "40px",
-              borderTop: "1px solid rgba(255,255,255,0.07)",
-              flexWrap: "wrap",
-            }}
-          >
-            {[
-              { num: "5+", label: "Projects" },
-              { num: "3+", label: "Years Learning" },
-              { num: "10+", label: "Technologies" },
-            ].map((s) => (
-              <div key={s.label}>
-                <div
-                  style={{
-                    fontFamily: "'Plus Jakarta Sans', sans-serif",
-                    fontSize: "28px",
-                    fontWeight: 800,
-                    background: "linear-gradient(135deg,#4F8EF7,#7C3AED)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                    backgroundClip: "text",
-                  }}
-                >
-                  {s.num}
-                </div>
-                <div
-                  style={{
-                    fontFamily: "'Inter', sans-serif",
-                    fontSize: "13px",
-                    color: "rgba(255,255,255,0.4)",
-                    marginTop: "2px",
-                  }}
-                >
-                  {s.label}
-                </div>
-              </div>
-            ))}
+              <span style={{ marginLeft: "8px" }}>↓</span>
+            </SolidButton>
+            <OutlineButton onClick={cta2Click}>{data.hero.cta2Label}</OutlineButton>
           </motion.div>
         </div>
-
-        {/* Right: profile photo */}
-        <motion.div
-          className="hero-photo-wrapper"
-          initial={{ opacity: 0, scale: 0.85 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          style={{ flex: "0 0 auto", display: "flex", justifyContent: "center", alignItems: "center", position: "relative" }}
-        >
-          {/* Outer glow ring */}
-          <motion.div
-            className="hero-glow-ring"
-            animate={{ scale: [1, 1.04, 1], opacity: [0.4, 0.7, 0.4] }}
-            transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
-            style={{
-              position: "absolute",
-              width: 340,
-              height: 340,
-              borderRadius: "50%",
-              background:
-                "conic-gradient(from 180deg, #4F8EF7, #7C3AED, #06b6d4, #4F8EF7)",
-              filter: "blur(24px)",
-              opacity: 0.45,
-            }}
-          />
-          {/* Medium ring */}
-          <div
-            className="hero-mid-ring"
-            style={{
-              position: "absolute",
-              width: 310,
-              height: 310,
-              borderRadius: "50%",
-              border: "1px solid rgba(79,142,247,0.25)",
-            }}
-          />
-          {/* Inner ring */}
-          <div
-            className="hero-inner-ring"
-            style={{
-              position: "absolute",
-              width: 280,
-              height: 280,
-              borderRadius: "50%",
-              border: "1px solid rgba(255,255,255,0.08)",
-            }}
-          />
-          {/* Photo */}
-          <div
-            className="hero-photo-circle"
-            style={{
-              width: 256,
-              height: 256,
-              borderRadius: "50%",
-              overflow: "hidden",
-              border: "2px solid rgba(79,142,247,0.4)",
-              position: "relative",
-              zIndex: 2,
-            }}
-          >
-            <ImageWithFallback
-              src={PROFILE_IMG}
-              alt="Kavindu Sandaruwan"
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                // Adjust vertical anchoring so the face sits better inside the circle.
-                objectPosition: "center 20%",
-              }}
-            />
-          </div>
-
-          {/* Floating badge */}
-          <motion.div
-            animate={{ y: [0, -8, 0] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-            style={{
-              position: "absolute",
-              bottom: -16,
-              right: -8,
-              padding: "10px 16px",
-              borderRadius: "14px",
-              background: "rgba(14,14,28,0.9)",
-              backdropFilter: "blur(20px)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              zIndex: 4,
-            }}
-          >
-            <div
-              style={{
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
-                fontSize: "13px",
-                fontWeight: 700,
-                color: "#fff",
-              }}
-            >
-              Cloud & DevOps
-            </div>
-            <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)", marginTop: "2px" }}>
-              Sri Lanka 🇱🇰
-            </div>
-          </motion.div>
-        </motion.div>
       </div>
 
       {/* Scroll indicator */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 2 }}
+        transition={{ delay: 1.8 }}
         style={{
           position: "absolute",
-          bottom: "32px",
-          left: "50%",
-          transform: "translateX(-50%)",
+          bottom: "28px",
+          left: "24px",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           gap: "8px",
+          zIndex: 2,
         }}
       >
         <span
           style={{
             fontFamily: "'Inter', sans-serif",
             fontSize: "11px",
-            color: "rgba(255,255,255,0.3)",
+            color: "rgba(255,255,255,0.6)",
             letterSpacing: "0.1em",
             textTransform: "uppercase",
           }}
@@ -444,9 +248,8 @@ export function KaviHero() {
           transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
           style={{
             width: 1,
-            height: 40,
-            background:
-              "linear-gradient(to bottom, rgba(79,142,247,0.6), transparent)",
+            height: 36,
+            background: "linear-gradient(to bottom, rgba(255,255,255,0.7), transparent)",
           }}
         />
       </motion.div>
@@ -454,14 +257,12 @@ export function KaviHero() {
   );
 }
 
-function GradientButton({
+function SolidButton({
   children,
   onClick,
-  filled,
 }: {
   children: React.ReactNode;
   onClick?: () => void;
-  filled?: boolean;
 }) {
   return (
     <motion.button
@@ -469,20 +270,17 @@ function GradientButton({
       whileTap={{ scale: 0.97 }}
       onClick={onClick}
       style={{
-        background: filled
-          ? "linear-gradient(135deg, #4F8EF7, #7C3AED)"
-          : "rgba(255,255,255,0.06)",
-        border: filled ? "none" : "1px solid rgba(255,255,255,0.12)",
-        borderRadius: "12px",
+        background: "#fff",
+        border: "none",
+        borderRadius: "100px",
         padding: "13px 28px",
         fontFamily: "'Inter', sans-serif",
         fontSize: "15px",
-        fontWeight: 500,
-        color: "#fff",
+        fontWeight: 600,
+        color: "#1d4fd8",
         cursor: "none",
         letterSpacing: "-0.01em",
-        boxShadow: filled ? "0 0 32px rgba(79,142,247,0.25)" : "none",
-        transition: "box-shadow 200ms ease",
+        boxShadow: "0 8px 24px rgba(10,30,90,0.25)",
       }}
     >
       {children}
@@ -492,43 +290,41 @@ function GradientButton({
 
 function OutlineButton({
   children,
-  href,
+  onClick,
 }: {
   children: React.ReactNode;
-  href?: string;
+  onClick?: () => void;
 }) {
   return (
-    <motion.a
+    <motion.button
       whileHover={{ scale: 1.04 }}
       whileTap={{ scale: 0.97 }}
-      href={href}
-      download
+      onClick={onClick}
       style={{
         display: "inline-block",
-        background: "rgba(255,255,255,0.04)",
-        border: "1px solid rgba(255,255,255,0.12)",
-        borderRadius: "12px",
+        background: "rgba(255,255,255,0.08)",
+        border: "1px solid rgba(255,255,255,0.5)",
+        borderRadius: "100px",
         padding: "13px 28px",
         fontFamily: "'Inter', sans-serif",
         fontSize: "15px",
         fontWeight: 500,
-        color: "rgba(255,255,255,0.75)",
+        color: "#fff",
         cursor: "none",
-        textDecoration: "none",
         letterSpacing: "-0.01em",
-        transition: "color 200ms, border-color 200ms",
+        transition: "background 200ms, border-color 200ms",
       }}
       onMouseEnter={(e) => {
-        (e.currentTarget as HTMLElement).style.color = "#fff";
-        (e.currentTarget as HTMLElement).style.borderColor = "rgba(79,142,247,0.4)";
+        (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.18)";
+        (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.8)";
       }}
       onMouseLeave={(e) => {
-        (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.75)";
-        (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.12)";
+        (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.08)";
+        (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.5)";
       }}
     >
       {children}
-    </motion.a>
+    </motion.button>
   );
 }
 
@@ -536,75 +332,32 @@ function OutlineButton({
 export function HeroResponsiveStyles() {
   return (
     <style>{`
-      /* Tablet & below: stack photo above text, center everything */
+      /* Tablet & below: shrink the photo panel, keep text on top */
       @media (max-width: 860px) {
-        .hero-content {
-          flex-direction: column-reverse !important;
-          align-items: center !important;
-          gap: 36px !important;
-          padding-bottom: 20px;
+        .hero-photo-cutout {
+          width: 100% !important;
+          height: 46% !important;
+          opacity: 0.35;
+        }
+        .hero-photo-cutout > div {
+          border-radius: 0 !important;
         }
         .hero-text {
-          flex: 1 1 auto !important;
-          width: 100% !important;
-          display: flex !important;
-          flex-direction: column !important;
-          align-items: center !important;
-          text-align: center !important;
-        }
-        .hero-text p {
           max-width: 100% !important;
-          text-align: center;
-        }
-        .hero-cta-row {
-          justify-content: center !important;
-        }
-        .hero-stats-row {
-          justify-content: center !important;
-        }
-        /* Scale down rings */
-        .hero-glow-ring {
-          width: 260px !important;
-          height: 260px !important;
-        }
-        .hero-mid-ring {
-          width: 238px !important;
-          height: 238px !important;
-        }
-        .hero-inner-ring {
-          width: 214px !important;
-          height: 214px !important;
-        }
-        .hero-photo-circle {
-          width: 196px !important;
-          height: 196px !important;
         }
         #intro {
           padding-top: 96px !important;
-          padding-bottom: 72px !important;
+          padding-bottom: 40px !important;
+          align-items: flex-start !important;
+        }
+        #intro .hero-content {
+          padding-top: 40px;
         }
       }
 
-      /* Mobile: further scale down */
       @media (max-width: 480px) {
-        .hero-glow-ring {
-          width: 210px !important;
-          height: 210px !important;
-        }
-        .hero-mid-ring {
-          width: 192px !important;
-          height: 192px !important;
-        }
-        .hero-inner-ring {
-          width: 172px !important;
-          height: 172px !important;
-        }
-        .hero-photo-circle {
-          width: 156px !important;
-          height: 156px !important;
-        }
         #intro {
-          padding-top: 80px !important;
+          padding-top: 84px !important;
           padding-left: 16px !important;
           padding-right: 16px !important;
         }

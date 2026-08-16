@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router'
 
 import App from './app/App'
+import { ThemeProvider } from './app/theme/ThemeProvider'
 import './styles/index.css'
 
 const rootEl = document.getElementById('root')
@@ -12,9 +13,11 @@ if (!rootEl) {
 
 ReactDOM.createRoot(rootEl).render(
   <StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
+    <ThemeProvider>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </ThemeProvider>
   </StrictMode>
 )
 

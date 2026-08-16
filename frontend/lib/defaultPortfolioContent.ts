@@ -227,13 +227,14 @@ export const defaultPortfolioContent = {
     profilePhoto: "/profile.png",
   },
   hero: {
-    heading: "Aspiring Cloud &\nDevOps Engineer",
+    heading: "Kavindu Sandaruwan.\nFull-Stack & DevOps Engineer.",
     subHeading: "Based in Sri Lanka. Building scalable, intelligent systems for the cloud.",
-    cta1Label: "View Works",
+    cta1Label: "View my work",
     cta1Link: "#works",
-    cta2Label: "Download CV",
-    cta2Link: "/cv.pdf",
+    cta2Label: "About me",
+    cta2Link: "#about",
     heroPhoto: "/profile.png",
+    heroVideo: "",
   },
   contact: {
     email: "kavindu2003sandaruwan@gmail.com",
@@ -241,7 +242,7 @@ export const defaultPortfolioContent = {
     linkedin: "https://www.linkedin.com/in/kavindu-sandaruwan-54354128a/",
     github: "https://github.com/Kavindu200385",
     phone: "+94 74 225 6408",
-    heading: "Get In Touch",
+    heading: "Say hello.",
     description:
       "I'm actively looking for opportunities in Cloud infrastructure and DevOps engineering. Whether it's a full-time role, internship, or an interesting project — I'd love to connect.",
   },

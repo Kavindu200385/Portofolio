@@ -1,6 +1,11 @@
 import "../styles/fonts.css";
 import { Navigate, Route, Routes } from "react-router";
 import { PortfolioDataProvider } from "./data/portfolioData";
+import { AdminAuthProvider } from "./admin/AdminAuthContext";
+import { AdminRouteGuard } from "./admin/AdminRouteGuard";
+import { AdminLoginPage } from "./admin/AdminLoginPage";
+import { AdminHeroEditorPage } from "./admin/AdminHeroEditorPage";
+import { Toaster } from "./components/ui/sonner";
 import { KaviCursor } from "./components/KaviCursor";
 import { KaviNavbar } from "./components/KaviNavbar";
 import { KaviHero, HeroResponsiveStyles } from "./components/KaviHero";
@@ -8,8 +13,10 @@ import { KaviAbout, AboutResponsiveStyles } from "./components/KaviAbout";
 import { KaviTimeline } from "./components/KaviTimeline";
 import { KaviSkills } from "./components/KaviSkills";
 import { KaviWorks } from "./components/KaviWorks";
+import { KaviLabs } from "./components/KaviLabs";
 import { KaviContact } from "./components/KaviContact";
 import { KaviFooter } from "./components/KaviFooter";
+import { BackToTop } from "./components/BackToTop";
 
 function PortfolioPage() {
   return (
@@ -30,12 +37,13 @@ function PortfolioPage() {
         }
 
         body {
-          background: #080810;
-          color: #fff;
           font-family: 'Inter', system-ui, sans-serif;
           min-height: 100vh;
           overflow-x: hidden;
           cursor: none;
+          background: var(--background);
+          color: var(--foreground);
+          transition: background 200ms ease, color 200ms ease;
         }
 
         /* ─── Selection ─── */
@@ -53,7 +61,7 @@ function PortfolioPage() {
 
         /* ─── Scrollbar ─── */
         ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #080810; }
+        ::-webkit-scrollbar-track { background: var(--background); }
         ::-webkit-scrollbar-thumb {
           background: rgba(79, 142, 247, 0.3);
           border-radius: 3px;
@@ -122,6 +130,18 @@ function PortfolioPage() {
           <div className="section-divider" />
         </div>
 
+        <KaviWorks />
+
+        <div style={{ padding: "0 24px" }}>
+          <div className="section-divider" />
+        </div>
+
+        <KaviLabs />
+
+        <div style={{ padding: "0 24px" }}>
+          <div className="section-divider" />
+        </div>
+
         <KaviAbout />
 
         <div style={{ padding: "0 24px" }}>
@@ -140,16 +160,11 @@ function PortfolioPage() {
           <div className="section-divider" />
         </div>
 
-        <KaviWorks />
-
-        <div style={{ padding: "0 24px" }}>
-          <div className="section-divider" />
-        </div>
-
         <KaviContact />
       </main>
 
       <KaviFooter />
+      <BackToTop />
     </>
   );
 }
@@ -157,10 +172,22 @@ function PortfolioPage() {
 export default function App() {
   return (
     <PortfolioDataProvider>
-      <Routes>
-        <Route path="/" element={<PortfolioPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <AdminAuthProvider>
+        <Toaster />
+        <Routes>
+          <Route path="/" element={<PortfolioPage />} />
+          <Route path="/admin/login" element={<AdminLoginPage />} />
+          <Route
+            path="/admin"
+            element={
+              <AdminRouteGuard>
+                <AdminHeroEditorPage />
+              </AdminRouteGuard>
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AdminAuthProvider>
     </PortfolioDataProvider>
   );
 }

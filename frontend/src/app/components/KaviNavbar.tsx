@@ -1,28 +1,48 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { ThemeToggle } from "./ThemeToggle";
 
 const navLinks = [
-  { label: "Intro", href: "#intro" },
-  { label: "About", href: "#about" },
-  { label: "Journey", href: "#timeline" },
-  { label: "Skills", href: "#skills" },
-  { label: "Works", href: "#works" },
-  { label: "Contact", href: "#contact" },
+  { label: "Work", id: "works" },
+  { label: "Lab", id: "labs" },
+  { label: "About", id: "about" },
 ];
 
-function scrollTo(href: string) {
-  const id = href.replace("#", "");
+function scrollTo(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
 }
 
 export function KaviNavbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [active, setActive] = useState<string>("works");
+  const activeRef = useRef(active);
+  activeRef.current = active;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    const sections = navLinks
+      .map((l) => document.getElementById(l.id))
+      .filter((el): el is HTMLElement => Boolean(el));
+    if (sections.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            setActive(entry.target.id);
+          }
+        }
+      },
+      { rootMargin: "-45% 0px -45% 0px", threshold: 0 },
+    );
+    sections.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
   }, []);
 
   return (
@@ -35,25 +55,64 @@ export function KaviNavbar() {
           right: 0,
           zIndex: 1000,
           display: "flex",
-          justifyContent: "center",
-          padding: "18px 20px 0",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "18px 24px 0",
           pointerEvents: "none",
+          gap: "12px",
         }}
       >
-        <motion.nav
+        {/* Left: mark + name */}
+        <motion.button
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           style={{
             pointerEvents: "all",
             display: "flex",
             alignItems: "center",
-            gap: "8px",
-            padding: "10px 16px",
+            gap: "6px",
+            border: "none",
+            cursor: "none",
+            background: "none",
+            padding: "10px 4px",
+            fontFamily: "'Plus Jakarta Sans', sans-serif",
+            fontSize: "15px",
+            fontWeight: 700,
+            color: "#fff",
+            whiteSpace: "nowrap",
+          }}
+        >
+          <span
+            style={{
+              background: "linear-gradient(135deg, #4F8EF7, #7C3AED)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
+          >
+            ✦ Kavi.
+          </span>
+        </motion.button>
+
+        {/* Center: scrollspy pill nav */}
+        <motion.nav
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          className="nav-pill-group"
+          style={{
+            pointerEvents: "all",
+            position: "absolute",
+            left: "50%",
+            transform: "translateX(-50%)",
+            display: "flex",
+            alignItems: "center",
+            gap: "2px",
+            padding: "6px",
             borderRadius: "100px",
-            background: scrolled
-              ? "rgba(8,8,16,0.9)"
-              : "rgba(14,14,28,0.7)",
+            background: scrolled ? "rgba(8,8,16,0.9)" : "rgba(14,14,28,0.7)",
             backdropFilter: `blur(${scrolled ? 28 : 16}px)`,
             WebkitBackdropFilter: `blur(${scrolled ? 28 : 16}px)`,
             border: "1px solid rgba(255,255,255,0.08)",
@@ -63,72 +122,59 @@ export function KaviNavbar() {
             transition: "background 300ms ease, backdrop-filter 300ms ease, box-shadow 300ms ease",
           }}
         >
-          {/* Logo */}
-          <button
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            style={{
-              border: "none",
-              cursor: "none",
-              padding: "6px 10px",
-              fontFamily: "'Plus Jakarta Sans', sans-serif",
-              fontSize: "15px",
-              fontWeight: 700,
-              background: "linear-gradient(135deg, #4F8EF7, #7C3AED)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-              marginRight: "8px",
-              whiteSpace: "nowrap",
-            } as React.CSSProperties}
-          >
-            KaviCode
-          </button>
+          {navLinks.map((link) => (
+            <NavLink
+              key={link.id}
+              label={link.label}
+              active={active === link.id}
+              onClick={() => scrollTo(link.id)}
+            />
+          ))}
+        </motion.nav>
 
-          {/* Desktop links */}
-          <div
-            className="nav-desktop-links"
-            style={{ display: "flex", alignItems: "center", gap: "2px" }}
-          >
-            {navLinks.map((link) => (
-              <NavLink key={link.label} label={link.label} href={link.href} />
-            ))}
-          </div>
-
-          {/* Hire Me CTA */}
-          <div
-            className="nav-cta"
-            style={{
-              marginLeft: "8px",
-              padding: "1px",
-              borderRadius: "100px",
-              background: "linear-gradient(135deg, #4F8EF7, #7C3AED)",
-            }}
-          >
-            <button
-              onClick={() => scrollTo("#contact")}
+        {/* Right: theme toggle + Say Hi */}
+        <motion.div
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          className="nav-right"
+          style={{ pointerEvents: "all", display: "flex", alignItems: "center", gap: "10px" }}
+        >
+          <div className="nav-right-desktop" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <ThemeToggle />
+            <div
               style={{
-                background: "#080810",
-                border: "none",
-                cursor: "none",
-                padding: "7px 18px",
+                padding: "1px",
                 borderRadius: "100px",
-                fontFamily: "'Inter', sans-serif",
-                fontSize: "13px",
-                fontWeight: 500,
-                color: "#fff",
-                whiteSpace: "nowrap",
-                transition: "background 200ms ease",
+                background: "linear-gradient(135deg, #4F8EF7, #7C3AED)",
               }}
-              onMouseEnter={(e) =>
-                ((e.currentTarget as HTMLElement).style.background =
-                  "linear-gradient(135deg, rgba(79,142,247,0.2), rgba(124,58,237,0.2))")
-              }
-              onMouseLeave={(e) =>
-                ((e.currentTarget as HTMLElement).style.background = "#080810")
-              }
             >
-              Hire Me
-            </button>
+              <button
+                onClick={() => scrollTo("contact")}
+                style={{
+                  background: "#080810",
+                  border: "none",
+                  cursor: "none",
+                  padding: "7px 18px",
+                  borderRadius: "100px",
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize: "13px",
+                  fontWeight: 500,
+                  color: "#fff",
+                  whiteSpace: "nowrap",
+                  transition: "background 200ms ease",
+                }}
+                onMouseEnter={(e) =>
+                  ((e.currentTarget as HTMLElement).style.background =
+                    "linear-gradient(135deg, rgba(79,142,247,0.2), rgba(124,58,237,0.2))")
+                }
+                onMouseLeave={(e) =>
+                  ((e.currentTarget as HTMLElement).style.background = "#080810")
+                }
+              >
+                Say Hi 👋
+              </button>
+            </div>
           </div>
 
           {/* Mobile hamburger */}
@@ -137,18 +183,19 @@ export function KaviNavbar() {
             onClick={() => setMobileOpen(true)}
             style={{
               display: "none",
-              background: "none",
-              border: "none",
+              background: "rgba(14,14,28,0.7)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: "100px",
               cursor: "none",
-              padding: "6px",
+              padding: "10px 12px",
               color: "rgba(255,255,255,0.7)",
-              fontSize: "18px",
+              fontSize: "16px",
               lineHeight: 1,
             }}
           >
             ☰
           </button>
-        </motion.nav>
+        </motion.div>
       </div>
 
       {/* Mobile overlay */}
@@ -169,7 +216,7 @@ export function KaviNavbar() {
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              gap: "32px",
+              gap: "28px",
             }}
             onClick={(e) => {
               if (e.target === e.currentTarget) setMobileOpen(false);
@@ -192,12 +239,12 @@ export function KaviNavbar() {
             </button>
             {navLinks.map((link, i) => (
               <motion.button
-                key={link.label}
+                key={link.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.06, duration: 0.4 }}
                 onClick={() => {
-                  scrollTo(link.href);
+                  scrollTo(link.id);
                   setMobileOpen(false);
                 }}
                 style={{
@@ -213,39 +260,73 @@ export function KaviNavbar() {
                 {link.label}
               </motion.button>
             ))}
+            <div style={{ display: "flex", alignItems: "center", gap: "16px", marginTop: "12px" }}>
+              <ThemeToggle />
+              <motion.button
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2, duration: 0.4 }}
+                onClick={() => {
+                  scrollTo("contact");
+                  setMobileOpen(false);
+                }}
+                style={{
+                  background: "linear-gradient(135deg, #4F8EF7, #7C3AED)",
+                  border: "none",
+                  borderRadius: "100px",
+                  padding: "12px 24px",
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize: "15px",
+                  fontWeight: 500,
+                  color: "#fff",
+                  cursor: "none",
+                }}
+              >
+                Say Hi 👋
+              </motion.button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
       <style>{`
         @media (max-width: 640px) {
-          .nav-desktop-links { display: none !important; }
-          .nav-cta { display: none !important; }
+          .nav-right-desktop { display: none !important; }
           .nav-mobile-btn { display: block !important; }
+          .nav-pill-group { padding: 4px !important; }
         }
       `}</style>
     </>
   );
 }
 
-function NavLink({ label, href }: { label: string; href: string }) {
+function NavLink({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
   const [hov, setHov] = useState(false);
   return (
     <button
-      onClick={() => scrollTo(href)}
+      onClick={onClick}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
-        background: hov ? "rgba(255,255,255,0.06)" : "none",
-        border: "none",
+        position: "relative",
+        background: active ? "rgba(79,142,247,0.18)" : hov ? "rgba(255,255,255,0.06)" : "none",
+        border: active ? "1px solid rgba(79,142,247,0.4)" : "1px solid transparent",
         cursor: "none",
-        padding: "7px 14px",
+        padding: "7px 18px",
         borderRadius: "100px",
         fontFamily: "'Inter', sans-serif",
         fontSize: "13px",
-        fontWeight: 400,
-        color: hov ? "#fff" : "rgba(255,255,255,0.6)",
-        transition: "color 150ms ease, background 150ms ease",
+        fontWeight: active ? 600 : 400,
+        color: active ? "#fff" : hov ? "#fff" : "rgba(255,255,255,0.6)",
+        transition: "color 150ms ease, background 150ms ease, border-color 150ms ease",
         whiteSpace: "nowrap",
       }}
     >

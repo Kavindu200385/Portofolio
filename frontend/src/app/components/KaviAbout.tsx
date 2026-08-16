@@ -12,6 +12,9 @@ export function KaviAbout() {
   const PROFILE_IMG = data.about.profilePhoto;
   const bioLines = data.about.paragraphs;
   const tags = data.about.badges;
+  // TODO: back with a real `pullQuote` field once the About schema is extended (see plan Phase 4/5).
+  const pullQuote =
+    "I care more about shipping something that works reliably than something that just looks good in a demo.";
 
   return (
     <section
@@ -26,7 +29,7 @@ export function KaviAbout() {
       }}
     >
       {/* Section label */}
-      <SectionLabel label="About Me" delay={0} inView={inView} />
+      <SectionLabel label="About" delay={0} inView={inView} />
 
       <div
         className="about-content"
@@ -152,18 +155,53 @@ export function KaviAbout() {
                   delay: 0.3 + i * 0.12,
                   ease: [0.16, 1, 0.3, 1],
                 }}
-                style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: "16px",
-                  lineHeight: 1.75,
-                  color: "rgba(255,255,255,0.6)",
-                  marginBottom: "16px",
-                }}
+                style={
+                  i === 0
+                    ? {
+                        fontFamily: "'Plus Jakarta Sans', sans-serif",
+                        fontSize: "clamp(22px, 2.8vw, 32px)",
+                        fontWeight: 700,
+                        lineHeight: 1.35,
+                        letterSpacing: "-0.02em",
+                        color: "#fff",
+                        marginBottom: "20px",
+                      }
+                    : {
+                        fontFamily: "'Inter', sans-serif",
+                        fontSize: "16px",
+                        lineHeight: 1.75,
+                        color: "rgba(255,255,255,0.6)",
+                        marginBottom: "16px",
+                      }
+                }
               >
                 {line}
               </motion.p>
             ))}
           </div>
+
+          {/* Pull-quote */}
+          {pullQuote ? (
+            <motion.blockquote
+              initial={{ opacity: 0, y: 16 }}
+              animate={inView ? { opacity: 1, y: 0 } : {}}
+              transition={{ delay: 0.6, duration: 0.5 }}
+              style={{
+                margin: "0 0 32px 0",
+                padding: "18px 22px",
+                borderLeft: "2px solid rgba(79,142,247,0.5)",
+                borderRadius: "0 12px 12px 0",
+                background: "rgba(79,142,247,0.05)",
+                fontFamily: "'Inter', sans-serif",
+                fontStyle: "italic",
+                fontSize: "15px",
+                lineHeight: 1.7,
+                color: "rgba(255,255,255,0.65)",
+              }}
+            >
+              "{pullQuote}"
+            </motion.blockquote>
+          ) : null}
 
           {/* Tags */}
           <motion.div
@@ -205,49 +243,51 @@ export function KaviAbout() {
             initial={{ opacity: 0, y: 16 }}
             animate={inView ? { opacity: 1, y: 0 } : {}}
             transition={{ delay: 1.0, duration: 0.5 }}
-            style={{ display: "flex", gap: "14px", flexWrap: "wrap" }}
+            style={{ display: "flex", gap: "24px", alignItems: "center", flexWrap: "wrap" }}
           >
-            <motion.button
+            <motion.a
               whileHover={{ scale: 1.04, y: -2, boxShadow: "0 8px 32px rgba(79,142,247,0.3)" }}
               whileTap={{ scale: 0.97 }}
-              onClick={() =>
-                document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })
-              }
+              href="/cv.pdf"
+              download
               style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
                 background: "linear-gradient(135deg, #4F8EF7, #7C3AED)",
                 border: "none",
-                borderRadius: "12px",
+                borderRadius: "100px",
                 padding: "12px 26px",
                 fontFamily: "'Inter', sans-serif",
                 fontSize: "14px",
                 fontWeight: 500,
                 color: "#fff",
                 cursor: "none",
+                textDecoration: "none",
               }}
             >
-              Hire Me
-            </motion.button>
-            <motion.a
-              whileHover={{ scale: 1.04, y: -2 }}
+              Download resume
+              <span aria-hidden style={{ fontSize: "13px" }}>⬇</span>
+            </motion.a>
+            <motion.button
+              whileHover={{ x: 3 }}
               whileTap={{ scale: 0.97 }}
-              href="/cv.pdf"
-              download
+              onClick={() =>
+                window.open("https://www.linkedin.com/in/kavindu-sandaruwan-54354128a/", "_blank", "noreferrer")
+              }
               style={{
-                display: "inline-block",
-                background: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(255,255,255,0.12)",
-                borderRadius: "12px",
-                padding: "12px 26px",
+                background: "none",
+                border: "none",
+                padding: 0,
                 fontFamily: "'Inter', sans-serif",
                 fontSize: "14px",
                 fontWeight: 500,
                 color: "rgba(255,255,255,0.7)",
                 cursor: "none",
-                textDecoration: "none",
               }}
             >
-              Download CV
-            </motion.a>
+              More about me →
+            </motion.button>
           </motion.div>
         </div>
       </div>

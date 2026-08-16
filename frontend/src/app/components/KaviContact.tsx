@@ -277,7 +277,7 @@ export function KaviContact() {
           </motion.button>
         </motion.div>
 
-        {/* Phone */}
+        {/* Phone + location */}
         <motion.p
           initial={{ opacity: 0 }}
           animate={inView ? { opacity: 1 } : {}}
@@ -286,11 +286,29 @@ export function KaviContact() {
             fontFamily: "'Inter', sans-serif",
             fontSize: "14px",
             color: "rgba(255,255,255,0.3)",
-            marginBottom: "56px",
+            marginBottom: "48px",
             letterSpacing: "0.06em",
           }}
         >
-          {PHONE}
+          {PHONE} · Sri Lanka 🇱🇰
+        </motion.p>
+
+        {/* Elsewhere */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={inView ? { opacity: 1 } : {}}
+          transition={{ delay: 0.48, duration: 0.5 }}
+          style={{
+            fontFamily: "'Inter', sans-serif",
+            fontSize: "12px",
+            fontWeight: 600,
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+            color: "rgba(255,255,255,0.35)",
+            marginBottom: "20px",
+          }}
+        >
+          Elsewhere
         </motion.p>
 
         {/* Social icon buttons */}

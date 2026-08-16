@@ -30,6 +30,7 @@ export function heroFromClient(body: any) {
     cta2Label: body.cta2Label ?? "",
     cta2Link: body.cta2Link ?? "",
     heroPhoto: body.heroPhoto ?? "",
+    heroVideo: body.heroVideo ?? "",
   };
 }
 
