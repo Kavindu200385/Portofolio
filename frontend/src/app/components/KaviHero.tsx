@@ -82,81 +82,61 @@ export function KaviHero() {
         position: "relative",
         overflow: "hidden",
         padding: "110px 24px 0",
-        background: "linear-gradient(150deg, #1d4fd8 0%, #4f7ff2 45%, #a9c8ff 100%)",
+        background: "#0a1120",
         opacity: loading ? 0.94 : 1,
         transition: "opacity 0.35s ease",
       }}
     >
-      {/* Soft light overlay for depth */}
+      {/* Full-bleed hero photo/video background */}
       <div
         style={{
           position: "absolute",
           inset: 0,
-          pointerEvents: "none",
-          background:
-            "radial-gradient(ellipse 70% 60% at 15% 15%, rgba(255,255,255,0.16), transparent 60%)",
-        }}
-      />
-
-      {/* Right: full-bleed hero photo/video */}
-      <div
-        className="hero-photo-cutout"
-        style={{
-          position: "absolute",
-          right: 0,
-          bottom: 0,
-          height: "88%",
-          width: "44%",
+          width: "100%",
+          height: "100%",
+          zIndex: 0,
           pointerEvents: "none",
         }}
       >
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.9, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          style={{
-            height: "100%",
-            width: "100%",
-            borderRadius: "32px 0 0 0",
-            overflow: "hidden",
-            boxShadow: "-24px 0 80px rgba(10,30,90,0.35)",
-          }}
-        >
-          {HERO_VIDEO && !prefersReducedMotion ? (
-            <video
-              src={HERO_VIDEO}
-              autoPlay
-              loop
-              muted
-              playsInline
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                objectPosition: "center 15%",
-              }}
-            />
-          ) : (
-            <ImageWithFallback
-              src={PROFILE_IMG}
-              alt="Kavindu Sandaruwan"
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                objectPosition: "center 15%",
-              }}
-            />
-          )}
-          <div
+        {HERO_VIDEO && !prefersReducedMotion ? (
+          <video
+            src={HERO_VIDEO}
+            autoPlay
+            loop
+            muted
+            playsInline
             style={{
-              position: "absolute",
-              inset: 0,
-              background: "linear-gradient(90deg, rgba(29,79,216,0.28), transparent 40%)",
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              objectPosition: "center 25%",
             }}
           />
-        </motion.div>
+        ) : (
+          <ImageWithFallback
+            src={PROFILE_IMG}
+            alt="Kavindu Sandaruwan"
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              objectPosition: "center 25%",
+            }}
+          />
+        )}
       </div>
+
+      {/* Dark overlay for text legibility, strongest over the text on the left */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          zIndex: 1,
+          pointerEvents: "none",
+          background:
+            "linear-gradient(100deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.45) 45%, rgba(0,0,0,0.15) 75%)",
+        }}
+      />
 
       {/* Content */}
       <div
@@ -332,16 +312,8 @@ function OutlineButton({
 export function HeroResponsiveStyles() {
   return (
     <style>{`
-      /* Tablet & below: shrink the photo panel, keep text on top */
+      /* Tablet & below: keep text on top of the full-bleed video */
       @media (max-width: 860px) {
-        .hero-photo-cutout {
-          width: 100% !important;
-          height: 46% !important;
-          opacity: 0.35;
-        }
-        .hero-photo-cutout > div {
-          border-radius: 0 !important;
-        }
         .hero-text {
           max-width: 100% !important;
         }
