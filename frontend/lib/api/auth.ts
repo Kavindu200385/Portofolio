@@ -5,14 +5,20 @@ import { SignJWT, jwtVerify } from "jose";
 export const ADMIN_SESSION_COOKIE = "admin_session";
 
 function getSecretKey() {
-  const secret = process.env.JWT_SECRET;
+  // Env vars pasted via a dashboard UI or copied from a code block frequently pick up a
+  // trailing newline/space — trim defensively so that doesn't silently break signing/verification.
+  const secret = process.env.JWT_SECRET?.trim();
   if (!secret) throw new Error("JWT_SECRET is not configured");
   return new TextEncoder().encode(secret);
 }
 
+export function adminCredentialsConfigured(): boolean {
+  return Boolean(process.env.ADMIN_EMAIL?.trim() && process.env.ADMIN_PASSWORD_HASH?.trim());
+}
+
 export async function verifyAdminCredentials(email: string, password: string): Promise<boolean> {
-  const expectedEmail = process.env.ADMIN_EMAIL;
-  const expectedHash = process.env.ADMIN_PASSWORD_HASH;
+  const expectedEmail = process.env.ADMIN_EMAIL?.trim();
+  const expectedHash = process.env.ADMIN_PASSWORD_HASH?.trim();
   if (!expectedEmail || !expectedHash) return false;
   if (typeof email !== "string" || email.trim().toLowerCase() !== expectedEmail.toLowerCase()) {
     return false;

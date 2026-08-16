@@ -10,6 +10,7 @@ import { apiPathSegments } from "../lib/api/helpers.js";
 import {
   requireAdminJwt,
   verifyAdminCredentials,
+  adminCredentialsConfigured,
   signAdminJwt,
   verifyAdminJwt,
   readSessionCookie,
@@ -85,6 +86,11 @@ export default async function handler(req: any, res: any) {
     // clean redeploy, and no dashboard-level rewrite explains it), so every admin route
     // here is deliberately flattened to one segment to route around that platform issue.
     if (seg[0] === "admin-login" && seg.length === 1 && method === "POST") {
+      if (!adminCredentialsConfigured()) {
+        return res.status(500).json({
+          error: "Admin credentials are not configured on the server (missing ADMIN_EMAIL/ADMIN_PASSWORD_HASH env vars).",
+        });
+      }
       const { email, password } = req.body || {};
       const ok = await verifyAdminCredentials(email, password);
       if (!ok) {
