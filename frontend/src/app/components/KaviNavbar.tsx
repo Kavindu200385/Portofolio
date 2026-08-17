@@ -4,7 +4,6 @@ import { ThemeToggle } from "./ThemeToggle";
 
 const navLinks = [
   { label: "Work", id: "works" },
-  { label: "Lab", id: "labs" },
   { label: "About", id: "about" },
   { label: "Journey", id: "timeline" },
   { label: "Skills", id: "skills" },
@@ -60,7 +59,7 @@ export function KaviNavbar() {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          padding: "18px 24px 0",
+          padding: "22px 24px",
           pointerEvents: "none",
           gap: "12px",
         }}

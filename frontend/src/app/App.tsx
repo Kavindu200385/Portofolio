@@ -13,7 +13,6 @@ import { KaviAbout, AboutResponsiveStyles } from "./components/KaviAbout";
 import { KaviTimeline } from "./components/KaviTimeline";
 import { KaviSkills } from "./components/KaviSkills";
 import { KaviWorks } from "./components/KaviWorks";
-import { KaviLabs } from "./components/KaviLabs";
 import { KaviContact } from "./components/KaviContact";
 import { KaviFooter } from "./components/KaviFooter";
 import { BackToTop } from "./components/BackToTop";
@@ -131,12 +130,6 @@ function PortfolioPage() {
         </div>
 
         <KaviWorks />
-
-        <div style={{ padding: "0 24px" }}>
-          <div className="section-divider" />
-        </div>
-
-        <KaviLabs />
 
         <div style={{ padding: "0 24px" }}>
           <div className="section-divider" />

@@ -116,7 +116,7 @@ export function KaviHero() {
               width: "100%",
               height: "100%",
               objectFit: "cover",
-              objectPosition: "center 25%",
+              objectPosition: "center 15%",
               opacity: videoReady ? 1 : 0,
               transition: "opacity 0.6s ease",
             }}
@@ -133,6 +133,20 @@ export function KaviHero() {
           pointerEvents: "none",
           background:
             "linear-gradient(100deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.45) 45%, rgba(0,0,0,0.15) 75%)",
+        }}
+      />
+
+      {/* Extra top-down fade so the fixed navbar always has clear contrast, regardless of what's in frame */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: "180px",
+          zIndex: 1,
+          pointerEvents: "none",
+          background: "linear-gradient(to bottom, rgba(3,6,16,0.8) 0%, rgba(3,6,16,0) 100%)",
         }}
       />
 
