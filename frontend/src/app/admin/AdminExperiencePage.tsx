@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Input } from "../components/ui/input";
@@ -26,6 +26,7 @@ import {
   AlertDialogTrigger,
 } from "../components/ui/alert-dialog";
 import { usePortfolioData, type ExperienceItem } from "../data/portfolioData";
+import { mapExperienceFromApi } from "../lib/portfolioMappers";
 import { apiUrl } from "../lib/apiBase";
 import { uploadImage } from "./lib/uploadImage";
 import { AdminLayout } from "./AdminLayout";
@@ -43,7 +44,9 @@ const EMPTY_EXPERIENCE: ExperienceForm = {
 };
 
 export function AdminExperiencePage() {
-  const { data, refetch } = usePortfolioData();
+  const { refetch } = usePortfolioData();
+  const [experiences, setExperiences] = useState<ExperienceItem[]>([]);
+  const [experiencesLoading, setExperiencesLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -53,6 +56,27 @@ export function AdminExperiencePage() {
   const { register, handleSubmit, setValue, watch, reset } = useForm<ExperienceForm>({
     defaultValues: EMPTY_EXPERIENCE,
   });
+
+  // The admin list must reflect real database rows only — usePortfolioData()'s `data.experiences`
+  // falls back to bundled placeholder content when the database is empty, and those placeholder
+  // rows don't have real Mongo ids, so editing them would fail. Fetch the raw list instead.
+  const loadExperiences = async () => {
+    setExperiencesLoading(true);
+    try {
+      const res = await fetch(apiUrl("/api/experience"));
+      const json = await res.json().catch(() => []);
+      const list = Array.isArray(json) ? json : [];
+      setExperiences(list.map((d, i) => mapExperienceFromApi(d as Record<string, unknown>, i)));
+    } catch {
+      setExperiences([]);
+    } finally {
+      setExperiencesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadExperiences();
+  }, []);
 
   const present = watch("present");
   const logo = watch("logo");
@@ -105,7 +129,7 @@ export function AdminExperiencePage() {
       if (!res.ok) throw new Error(json?.error || "Save failed");
       toast.success(editingId ? "Experience updated" : "Experience added");
       cancelEdit();
-      await refetch();
+      await Promise.all([loadExperiences(), refetch()]);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Save failed");
     } finally {
@@ -124,7 +148,7 @@ export function AdminExperiencePage() {
       if (!res.ok) throw new Error(json?.error || "Delete failed");
       toast.success("Experience deleted");
       if (editingId === id) cancelEdit();
-      await refetch();
+      await Promise.all([loadExperiences(), refetch()]);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Delete failed");
     } finally {
@@ -150,14 +174,20 @@ export function AdminExperiencePage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.experiences.length === 0 ? (
+              {experiencesLoading ? (
+                <TableRow>
+                  <TableCell colSpan={4} style={{ textAlign: "center", color: "rgba(128,128,128,0.8)" }}>
+                    Loading…
+                  </TableCell>
+                </TableRow>
+              ) : experiences.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} style={{ textAlign: "center", color: "rgba(128,128,128,0.8)" }}>
                     No experience entries yet.
                   </TableCell>
                 </TableRow>
               ) : (
-                data.experiences.map((item) => (
+                experiences.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell>{item.companyName}</TableCell>
                     <TableCell>{item.role}</TableCell>

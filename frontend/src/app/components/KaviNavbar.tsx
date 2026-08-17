@@ -1,23 +1,40 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { useLocation, useNavigate } from "react-router";
 import { ThemeToggle } from "./ThemeToggle";
 
 const navLinks = [
-  { label: "Work", id: "works" },
   { label: "About", id: "about" },
   { label: "Journey", id: "timeline" },
   { label: "Skills", id: "skills" },
+  { label: "Work", id: "works" },
   { label: "Contact", id: "contact" },
 ];
 
-function scrollTo(id: string) {
-  document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
-}
-
 export function KaviNavbar() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [active, setActive] = useState<string>("works");
+  const [active, setActive] = useState<string>("about");
+
+  // Section ids only exist on "/" — from any other page, navigate home first (via hash),
+  // then Layout's hash-scroll effect scrolls to the right section once it's mounted.
+  const goToSection = (id: string) => {
+    if (location.pathname === "/") {
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+    } else {
+      navigate(`/#${id}`);
+    }
+  };
+
+  const goHome = () => {
+    if (location.pathname === "/") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      navigate("/");
+    }
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -71,7 +88,7 @@ export function KaviNavbar() {
       >
         {/* Left: logo */}
         <button
-          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          onClick={goHome}
           style={{
             justifySelf: "start",
             display: "flex",
@@ -107,7 +124,7 @@ export function KaviNavbar() {
               key={link.id}
               label={link.label}
               active={active === link.id}
-              onClick={() => scrollTo(link.id)}
+              onClick={() => goToSection(link.id)}
             />
           ))}
         </nav>
@@ -124,7 +141,7 @@ export function KaviNavbar() {
               }}
             >
               <button
-                onClick={() => scrollTo("contact")}
+                onClick={() => goToSection("contact")}
                 style={{
                   background: "#080810",
                   border: "none",
@@ -218,7 +235,7 @@ export function KaviNavbar() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.06, duration: 0.4 }}
                 onClick={() => {
-                  scrollTo(link.id);
+                  goToSection(link.id);
                   setMobileOpen(false);
                 }}
                 style={{
@@ -241,7 +258,7 @@ export function KaviNavbar() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2, duration: 0.4 }}
                 onClick={() => {
-                  scrollTo("contact");
+                  goToSection("contact");
                   setMobileOpen(false);
                 }}
                 style={{

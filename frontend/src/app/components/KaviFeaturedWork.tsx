@@ -2,22 +2,21 @@
 
 import { useRef } from "react";
 import { motion, useInView } from "motion/react";
-import { Link } from "react-router";
 import { SectionLabel } from "./KaviAbout";
 import { ProjectCard } from "./ProjectCard";
 import { usePortfolioData } from "../data/portfolioData";
 
-export function KaviWorks() {
+export function KaviFeaturedWork() {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
   const { data, loading } = usePortfolioData();
-  const projects = data.projects.slice(3, 9);
+  const projects = data.projects.slice(0, 3);
 
   if (projects.length === 0) return null;
 
   return (
     <section
-      id="works"
+      id="featured-work"
       ref={ref}
       style={{ padding: "120px 24px", opacity: loading ? 0.92 : 1, transition: "opacity 0.35s ease" }}
     >
@@ -47,7 +46,7 @@ export function KaviWorks() {
               margin: 0,
             }}
           >
-            Projects
+            Selected work
           </motion.h2>
           <motion.p
             initial={{ opacity: 0 }}
@@ -62,67 +61,35 @@ export function KaviWorks() {
               maxWidth: "360px",
             }}
           >
-            More of what I've been building.
+            Work I'm most proud of — projects I led that shipped.
           </motion.p>
         </div>
 
-        {/* 2-column grid */}
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(2, 1fr)",
-            gap: "48px 32px",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: "40px 28px",
           }}
-          className="works-grid"
+          className="featured-work-grid"
         >
           {projects.map((p, i) => (
             <ProjectCard key={`${p.id}-${i}`} project={p} index={i} inView={inView} />
           ))}
         </div>
-
-        <div style={{ display: "flex", justifyContent: "center", marginTop: "56px" }}>
-          <Link
-            to="/projects"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "13px 28px",
-              borderRadius: "100px",
-              border: "1px solid rgba(255,255,255,0.2)",
-              fontFamily: "'Inter', sans-serif",
-              fontSize: "15px",
-              fontWeight: 500,
-              color: "#fff",
-              textDecoration: "none",
-              transition: "background 200ms ease, border-color 200ms ease",
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.08)";
-              (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.4)";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.background = "transparent";
-              (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.2)";
-            }}
-          >
-            Show more
-            <span>→</span>
-          </Link>
-        </div>
       </div>
 
       <style>{`
         @media (max-width: 768px) {
-          .works-grid {
+          .featured-work-grid {
             grid-template-columns: 1fr !important;
           }
-          #works {
+          #featured-work {
             padding: 80px 24px !important;
           }
         }
         @media (max-width: 480px) {
-          #works {
+          #featured-work {
             padding: 64px 16px !important;
           }
         }

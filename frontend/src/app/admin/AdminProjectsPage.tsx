@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Input } from "../components/ui/input";
@@ -33,6 +33,7 @@ import {
   AlertDialogTrigger,
 } from "../components/ui/alert-dialog";
 import { usePortfolioData, type ProjectItem, type ProjectType } from "../data/portfolioData";
+import { mapProjectFromApi } from "../lib/portfolioMappers";
 import { apiUrl } from "../lib/apiBase";
 import { uploadImage } from "./lib/uploadImage";
 import { AdminLayout } from "./AdminLayout";
@@ -55,7 +56,9 @@ const EMPTY_PROJECT: ProjectForm = {
 const PROJECT_TYPES: ProjectType[] = ["Individual", "Group", "Research"];
 
 export function AdminProjectsPage() {
-  const { data, refetch } = usePortfolioData();
+  const { refetch } = usePortfolioData();
+  const [projects, setProjects] = useState<ProjectItem[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -68,6 +71,27 @@ export function AdminProjectsPage() {
   const { register, handleSubmit, setValue, watch, reset } = useForm<ProjectForm>({
     defaultValues: EMPTY_PROJECT,
   });
+
+  // The admin list must reflect real database rows only — usePortfolioData()'s `data.projects`
+  // falls back to bundled placeholder content when the database is empty, and those placeholder
+  // rows don't have real Mongo ids, so editing them would fail. Fetch the raw list instead.
+  const loadProjects = async () => {
+    setProjectsLoading(true);
+    try {
+      const res = await fetch(apiUrl("/api/projects"));
+      const json = await res.json().catch(() => []);
+      const list = Array.isArray(json) ? json : [];
+      setProjects(list.map((d, i) => mapProjectFromApi(d as Record<string, unknown>, i)));
+    } catch {
+      setProjects([]);
+    } finally {
+      setProjectsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadProjects();
+  }, []);
 
   const thumbnail = watch("thumbnail");
   const extraImages = watch("extraImages") ?? [];
@@ -169,7 +193,7 @@ export function AdminProjectsPage() {
       if (!res.ok) throw new Error(json?.error || "Save failed");
       toast.success(editingId ? "Project updated" : "Project added");
       cancelEdit();
-      await refetch();
+      await Promise.all([loadProjects(), refetch()]);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Save failed");
     } finally {
@@ -188,7 +212,7 @@ export function AdminProjectsPage() {
       if (!res.ok) throw new Error(json?.error || "Delete failed");
       toast.success("Project deleted");
       if (editingId === id) cancelEdit();
-      await refetch();
+      await Promise.all([loadProjects(), refetch()]);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Delete failed");
     } finally {
@@ -214,14 +238,20 @@ export function AdminProjectsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.projects.length === 0 ? (
+              {projectsLoading ? (
+                <TableRow>
+                  <TableCell colSpan={4} style={{ textAlign: "center", color: "rgba(128,128,128,0.8)" }}>
+                    Loading…
+                  </TableCell>
+                </TableRow>
+              ) : projects.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} style={{ textAlign: "center", color: "rgba(128,128,128,0.8)" }}>
                     No projects yet.
                   </TableCell>
                 </TableRow>
               ) : (
-                data.projects.map((item) => (
+                projects.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell>{item.name}</TableCell>
                     <TableCell>{item.type}</TableCell>
