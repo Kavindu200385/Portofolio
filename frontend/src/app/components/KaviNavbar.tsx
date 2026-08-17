@@ -59,12 +59,15 @@ export function KaviNavbar() {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          padding: "22px 24px",
+          padding: "16px 32px",
           gap: "12px",
+          background: "linear-gradient(180deg, #101d45 0%, #0c1836 100%)",
+          borderBottom: "1px solid rgba(79,142,247,0.15)",
+          boxShadow: scrolled ? "0 8px 24px rgba(0,0,0,0.35)" : "none",
           opacity: scrolled ? 1 : 0,
           transform: scrolled ? "translateY(0)" : "translateY(-16px)",
           pointerEvents: scrolled ? "auto" : "none",
-          transition: "opacity 0.4s ease, transform 0.4s ease",
+          transition: "opacity 0.4s ease, transform 0.4s ease, box-shadow 0.4s ease",
         }}
       >
         {/* Left: mark + name */}
@@ -115,16 +118,6 @@ export function KaviNavbar() {
             display: "flex",
             alignItems: "center",
             gap: "2px",
-            padding: "6px",
-            borderRadius: "100px",
-            background: scrolled ? "rgba(8,8,16,0.9)" : "rgba(14,14,28,0.7)",
-            backdropFilter: `blur(${scrolled ? 28 : 16}px)`,
-            WebkitBackdropFilter: `blur(${scrolled ? 28 : 16}px)`,
-            border: "1px solid rgba(255,255,255,0.08)",
-            boxShadow: scrolled
-              ? "0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(79,142,247,0.06)"
-              : "0 4px 16px rgba(0,0,0,0.2)",
-            transition: "background 300ms ease, backdrop-filter 300ms ease, box-shadow 300ms ease",
           }}
         >
           {navLinks.map((link) => (
@@ -188,8 +181,8 @@ export function KaviNavbar() {
             onClick={() => setMobileOpen(true)}
             style={{
               display: "none",
-              background: "rgba(14,14,28,0.7)",
-              border: "1px solid rgba(255,255,255,0.08)",
+              background: "rgba(79,142,247,0.12)",
+              border: "1px solid rgba(79,142,247,0.25)",
               borderRadius: "100px",
               cursor: "none",
               padding: "10px 12px",
