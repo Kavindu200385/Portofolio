@@ -8,7 +8,6 @@ const HeroSchema = new Schema(
     cta1Link: { type: String },
     cta2Label: { type: String },
     cta2Link: { type: String },
-    heroPhoto: { type: String },
     heroVideo: { type: String },
   },
   { collection: "hero" },

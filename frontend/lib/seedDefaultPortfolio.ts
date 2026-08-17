@@ -78,7 +78,6 @@ export async function seedDefaultPortfolioIfEmpty() {
       cta1Link: defaultPortfolioContent.hero.cta1Link,
       cta2Label: defaultPortfolioContent.hero.cta2Label,
       cta2Link: defaultPortfolioContent.hero.cta2Link,
-      heroPhoto: defaultPortfolioContent.hero.heroPhoto,
     });
     await Hero.findOneAndUpdate({}, payload, { upsert: true, new: true });
     summary.heroSeeded = true;

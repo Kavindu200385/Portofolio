@@ -88,7 +88,6 @@ export type HeroData = {
   cta1Link: string;
   cta2Label: string;
   cta2Link: string;
-  heroPhoto: string;
   heroVideo: string;
 };
 

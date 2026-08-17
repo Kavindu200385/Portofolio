@@ -8,18 +8,15 @@ import { Button } from "../components/ui/button";
 import { Progress } from "../components/ui/progress";
 import { usePortfolioData, type HeroData } from "../data/portfolioData";
 import { apiUrl } from "../lib/apiBase";
-import { uploadHeroImage } from "./lib/uploadHeroImage";
 import { uploadHeroVideo } from "./lib/uploadHeroVideo";
 import { useAdminAuth } from "./AdminAuthContext";
 
 export function AdminHeroEditorPage() {
   const { data, refetch } = usePortfolioData();
   const { email, logout } = useAdminAuth();
-  const [photoUploading, setPhotoUploading] = useState(false);
   const [videoUploading, setVideoUploading] = useState(false);
   const [videoProgress, setVideoProgress] = useState(0);
   const [saving, setSaving] = useState(false);
-  const photoInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
 
   const {
@@ -29,24 +26,7 @@ export function AdminHeroEditorPage() {
     watch,
   } = useForm<HeroData>({ defaultValues: data.hero });
 
-  const heroPhoto = watch("heroPhoto");
   const heroVideo = watch("heroVideo");
-
-  const onPhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setPhotoUploading(true);
-    try {
-      const url = await uploadHeroImage(file);
-      setValue("heroPhoto", url, { shouldDirty: true });
-      toast.success("Photo uploaded");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Photo upload failed");
-    } finally {
-      setPhotoUploading(false);
-      if (photoInputRef.current) photoInputRef.current.value = "";
-    }
-  };
 
   const onVideoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -135,20 +115,6 @@ export function AdminHeroEditorPage() {
             </Field>
           </div>
 
-          <Field label="Photo (fallback shown when there's no video, or reduced-motion is on)">
-            <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-              {heroPhoto ? (
-                <img
-                  src={heroPhoto}
-                  alt="Hero photo preview"
-                  style={{ width: "72px", height: "72px", objectFit: "cover", borderRadius: "10px" }}
-                />
-              ) : null}
-              <input ref={photoInputRef} type="file" accept="image/*" onChange={onPhotoChange} disabled={photoUploading} />
-              {photoUploading ? <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.5)" }}>Uploading…</span> : null}
-            </div>
-          </Field>
-
           <Field label="Hero background video">
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               {heroVideo ? (
@@ -161,7 +127,7 @@ export function AdminHeroEditorPage() {
                   style={{ width: "220px", height: "130px", objectFit: "cover", borderRadius: "10px" }}
                 />
               ) : (
-                <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)" }}>No video set — the photo above is shown.</span>
+                <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)" }}>No video set.</span>
               )}
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                 <input
@@ -181,7 +147,7 @@ export function AdminHeroEditorPage() {
             </div>
           </Field>
 
-          <Button type="submit" disabled={saving || photoUploading || videoUploading}>
+          <Button type="submit" disabled={saving || videoUploading}>
             {saving ? "Saving…" : "Save changes"}
           </Button>
         </form>

@@ -1,7 +1,6 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
-import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { usePortfolioData } from "../data/portfolioData";
 
 function HeroChar({ char, delay }: { char: string; delay: number }) {
@@ -50,7 +49,6 @@ function StaggerText({ text, baseDelay = 0.3 }: { text: string; baseDelay?: numb
 export function KaviHero() {
   const { data, loading } = usePortfolioData();
   const HEADING = data.hero.heading;
-  const PROFILE_IMG = data.hero.heroPhoto;
   const HERO_VIDEO = data.hero.heroVideo;
   const prefersReducedMotion = useReducedMotion();
   const cta1Link = data.hero.cta1Link || "";
@@ -112,18 +110,7 @@ export function KaviHero() {
               objectPosition: "center 25%",
             }}
           />
-        ) : (
-          <ImageWithFallback
-            src={PROFILE_IMG}
-            alt="Kavindu Sandaruwan"
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              objectPosition: "center 25%",
-            }}
-          />
-        )}
+        ) : null}
       </div>
 
       {/* Dark overlay for text legibility, strongest over the text on the left */}

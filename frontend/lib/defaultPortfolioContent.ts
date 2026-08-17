@@ -233,7 +233,6 @@ export const defaultPortfolioContent = {
     cta1Link: "#works",
     cta2Label: "About me",
     cta2Link: "#about",
-    heroPhoto: "/profile.png",
     heroVideo: "",
   },
   contact: {

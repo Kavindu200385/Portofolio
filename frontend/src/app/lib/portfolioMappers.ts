@@ -135,7 +135,6 @@ export function mapHeroFromApi(doc: Record<string, unknown> | null | undefined):
     cta1Link: String(doc.cta1Link ?? ""),
     cta2Label: String(doc.cta2Label ?? ""),
     cta2Link: String(doc.cta2Link ?? ""),
-    heroPhoto: String(doc.heroPhoto ?? ""),
     heroVideo: String(doc.heroVideo ?? ""),
   };
 }

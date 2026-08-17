@@ -486,8 +486,6 @@ export default async function handler(req: any, res: any) {
       if (method === "PUT") {
         if (!(await requireAdminJwt(req, res))) return;
         const payload = heroFromClient(req.body);
-        const he = rejectDataImageField("heroPhoto", payload.heroPhoto);
-        if (he) return res.status(400).json({ error: he });
         const ve = rejectDataVideoField("heroVideo", payload.heroVideo);
         if (ve) return res.status(400).json({ error: ve });
         const doc = await Hero.findOneAndUpdate({}, payload, { upsert: true, new: true }).lean();
