@@ -70,12 +70,12 @@ export function KaviWorks() {
           </motion.p>
         </div>
 
-        {/* 2-column grid */}
+        {/* 3-column grid */}
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(2, 1fr)",
-            gap: "48px 32px",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: "40px 28px",
           }}
           className="works-grid"
         >
@@ -117,6 +117,11 @@ export function KaviWorks() {
       </div>
 
       <style>{`
+        @media (max-width: 1024px) {
+          .works-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+        }
         @media (max-width: 768px) {
           .works-grid {
             grid-template-columns: 1fr !important;
