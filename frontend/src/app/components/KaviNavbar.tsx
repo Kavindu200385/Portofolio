@@ -61,7 +61,7 @@ export function KaviNavbar() {
           alignItems: "center",
           padding: "16px 32px",
           gap: "12px",
-          background: "linear-gradient(180deg, #101d45 0%, #0c1836 100%)",
+          background: "linear-gradient(180deg, #17296b 0%, #0e1a3d 100%)",
           borderBottom: "1px solid rgba(79,142,247,0.15)",
           boxShadow: scrolled ? "0 8px 24px rgba(0,0,0,0.35)" : "none",
           opacity: scrolled ? 1 : 0,
@@ -114,10 +114,14 @@ export function KaviNavbar() {
             pointerEvents: "all",
             position: "absolute",
             left: "50%",
+            top: 0,
+            bottom: 0,
+            margin: "auto 0",
             transform: "translateX(-50%)",
             display: "flex",
             alignItems: "center",
             gap: "2px",
+            height: "fit-content",
           }}
         >
           {navLinks.map((link) => (
