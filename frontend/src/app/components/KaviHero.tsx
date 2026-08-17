@@ -103,6 +103,8 @@ export function KaviHero() {
             loop
             muted
             playsInline
+            preload="auto"
+            fetchPriority="high"
             style={{
               width: "100%",
               height: "100%",

@@ -200,6 +200,24 @@ function mergeProjectsWithDefaults(
   return merged;
 }
 
+function buildHero(rawHero: unknown): HeroData {
+  if (rawHero == null) {
+    return defaultPortfolioData.hero;
+  }
+  const doc = rawHero as Record<string, unknown> | null;
+  if (!doc) {
+    return defaultPortfolioData.hero;
+  }
+  const m = mapHeroFromApi(doc);
+  if (!m) {
+    return defaultPortfolioData.hero;
+  }
+  if (!m.heading.trim() && !m.subHeading.trim()) {
+    return defaultPortfolioData.hero;
+  }
+  return m;
+}
+
 /**
  * Merges API payloads with built-in defaults when the database is empty or an endpoint fails.
  */
@@ -278,23 +296,7 @@ function buildPortfolioData(
     return m;
   })();
 
-  const hero: HeroData = (() => {
-    if (rawHero == null) {
-      return defaultPortfolioData.hero;
-    }
-    const doc = rawHero as Record<string, unknown> | null;
-    if (!doc) {
-      return defaultPortfolioData.hero;
-    }
-    const m = mapHeroFromApi(doc);
-    if (!m) {
-      return defaultPortfolioData.hero;
-    }
-    if (!m.heading.trim() && !m.subHeading.trim()) {
-      return defaultPortfolioData.hero;
-    }
-    return m;
-  })();
+  const hero: HeroData = buildHero(rawHero);
 
   const contact: ContactData = (() => {
     if (rawContact == null) {
@@ -326,22 +328,6 @@ function buildPortfolioData(
   };
 }
 
-/**
- * Loads all sections in parallel. Uses resilient fetches (never throws per endpoint).
- */
-export async function loadPortfolioFromApi(): Promise<PortfolioData> {
-  const [rawProjects, rawSkills, rawExp, rawEdu, rawAbout, rawHero, rawContact] = await Promise.all([
-    fetchJsonLoose("/api/projects"),
-    fetchJsonLoose("/api/skills"),
-    fetchJsonLoose("/api/experience"),
-    fetchJsonLoose("/api/education"),
-    fetchJsonLoose("/api/about"),
-    fetchJsonLoose("/api/hero"),
-    fetchJsonLoose("/api/contact"),
-  ]);
-  return buildPortfolioData(rawProjects, rawSkills, rawExp, rawEdu, rawAbout, rawHero, rawContact);
-}
-
 type PortfolioContextValue = {
   data: PortfolioData;
   loading: boolean;
@@ -366,19 +352,38 @@ export function PortfolioDataProvider({ children }: { children: ReactNode }) {
     const gen = ++fetchGeneration.current;
     setLoading(true);
     setError(null);
-    try {
-      const next = await loadPortfolioFromApi();
+
+    // Hero (and its video) is the first thing visitors see, so fetch it on its own and
+    // paint it as soon as it lands instead of waiting on the slower sections below.
+    void fetchJsonLoose("/api/hero").then((rawHero) => {
       if (gen !== fetchGeneration.current) return;
-      setData(next);
+      setData((prev) => ({ ...prev, hero: buildHero(rawHero) }));
+    });
+
+    try {
+      const [rawProjects, rawSkills, rawExp, rawEdu, rawAbout, rawContact] = await Promise.all([
+        fetchJsonLoose("/api/projects"),
+        fetchJsonLoose("/api/skills"),
+        fetchJsonLoose("/api/experience"),
+        fetchJsonLoose("/api/education"),
+        fetchJsonLoose("/api/about"),
+        fetchJsonLoose("/api/contact"),
+      ]);
+      if (gen !== fetchGeneration.current) return;
+      setData((prev) => ({
+        ...buildPortfolioData(rawProjects, rawSkills, rawExp, rawEdu, rawAbout, null, rawContact),
+        hero: prev.hero,
+      }));
     } catch (e) {
       if (gen !== fetchGeneration.current) return;
       const msg = e instanceof Error ? e.message : "Failed to load portfolio data";
       setError(msg);
-      setData({
+      setData((prev) => ({
         ...defaultPortfolioData,
         projects: cloneDefaultProjects(),
+        hero: prev.hero,
         changesLog: [],
-      });
+      }));
     } finally {
       if (gen === fetchGeneration.current) {
         setLoading(false);
