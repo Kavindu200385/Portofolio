@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { usePortfolioData } from "../data/portfolioData";
 
@@ -51,6 +52,10 @@ export function KaviHero() {
   const HEADING = data.hero.heading;
   const HERO_VIDEO = data.hero.heroVideo;
   const prefersReducedMotion = useReducedMotion();
+  const [videoReady, setVideoReady] = useState(false);
+  useEffect(() => {
+    setVideoReady(false);
+  }, [HERO_VIDEO]);
   const cta1Link = data.hero.cta1Link || "";
   const cta2Link = data.hero.cta2Link || "";
   const cta1IsAnchor = cta1Link.startsWith("#");
@@ -98,6 +103,7 @@ export function KaviHero() {
       >
         {HERO_VIDEO && !prefersReducedMotion ? (
           <video
+            key={HERO_VIDEO}
             src={HERO_VIDEO}
             autoPlay
             loop
@@ -105,11 +111,14 @@ export function KaviHero() {
             playsInline
             preload="auto"
             fetchPriority="high"
+            onCanPlay={() => setVideoReady(true)}
             style={{
               width: "100%",
               height: "100%",
               objectFit: "cover",
               objectPosition: "center 25%",
+              opacity: videoReady ? 1 : 0,
+              transition: "opacity 0.6s ease",
             }}
           />
         ) : null}

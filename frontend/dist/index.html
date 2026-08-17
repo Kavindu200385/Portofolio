@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>KaviCode</title>
     <link rel="icon" type="image/svg+xml" href="/favicon-k.svg" />
+    <!-- Kick off the hero-content fetch immediately, in parallel with JS bundle download/parse,
+         so the hero video URL (and the video download itself) can start as early as possible. -->
+    <link rel="preload" href="/api/hero" as="fetch" crossorigin="anonymous" />
     <script>
       (function () {
         try {
@@ -16,7 +19,7 @@
         }
       })();
     </script>
-    <script type="module" crossorigin src="/assets/index-DI1DUrKS.js"></script>
+    <script type="module" crossorigin src="/assets/index-CrdqNI6T.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-D3O_diFf.css">
   </head>
   <body>

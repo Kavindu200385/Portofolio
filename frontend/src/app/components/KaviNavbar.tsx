@@ -6,6 +6,9 @@ const navLinks = [
   { label: "Work", id: "works" },
   { label: "Lab", id: "labs" },
   { label: "About", id: "about" },
+  { label: "Journey", id: "timeline" },
+  { label: "Skills", id: "skills" },
+  { label: "Contact", id: "contact" },
 ];
 
 function scrollTo(id: string) {
@@ -290,10 +293,10 @@ export function KaviNavbar() {
       </AnimatePresence>
 
       <style>{`
-        @media (max-width: 640px) {
+        @media (max-width: 1100px) {
+          .nav-pill-group { display: none !important; }
           .nav-right-desktop { display: none !important; }
           .nav-mobile-btn { display: block !important; }
-          .nav-pill-group { padding: 4px !important; }
         }
       `}</style>
     </>
