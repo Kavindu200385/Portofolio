@@ -60,8 +60,11 @@ export function KaviNavbar() {
           justifyContent: "space-between",
           alignItems: "center",
           padding: "22px 24px",
-          pointerEvents: "none",
           gap: "12px",
+          opacity: scrolled ? 1 : 0,
+          transform: scrolled ? "translateY(0)" : "translateY(-16px)",
+          pointerEvents: scrolled ? "auto" : "none",
+          transition: "opacity 0.4s ease, transform 0.4s ease",
         }}
       >
         {/* Left: mark + name */}
