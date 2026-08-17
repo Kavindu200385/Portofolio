@@ -132,12 +132,6 @@ function PortfolioPage() {
           <div className="section-divider" />
         </div>
 
-        <KaviWorks />
-
-        <div style={{ padding: "0 24px" }}>
-          <div className="section-divider" />
-        </div>
-
         <KaviAbout />
 
         <div style={{ padding: "0 24px" }}>
@@ -151,6 +145,12 @@ function PortfolioPage() {
         </div>
 
         <KaviSkills />
+
+        <div style={{ padding: "0 24px" }}>
+          <div className="section-divider" />
+        </div>
+
+        <KaviWorks />
 
         <div style={{ padding: "0 24px" }}>
           <div className="section-divider" />
