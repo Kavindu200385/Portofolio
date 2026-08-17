@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -18,8 +18,6 @@ export function KaviNavbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [active, setActive] = useState<string>("works");
-  const activeRef = useRef(active);
-  activeRef.current = active;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -49,37 +47,33 @@ export function KaviNavbar() {
 
   return (
     <>
-      <div
+      {/* Header: one flat, unified surface — everything (logo, nav, actions) lives directly
+          inside it, no nested element gets its own background/border/blur. */}
+      <header
         style={{
           position: "fixed",
           top: 0,
           left: 0,
           right: 0,
           zIndex: 1000,
-          display: "flex",
-          justifyContent: "space-between",
+          display: "grid",
+          gridTemplateColumns: "1fr auto 1fr",
           alignItems: "center",
           padding: "16px 32px",
-          gap: "12px",
-          background: "rgba(19,33,77,0.97)",
+          background: "rgba(19,33,77,0.35)",
           backdropFilter: "blur(24px)",
           WebkitBackdropFilter: "blur(24px)",
-          borderBottom: "1px solid rgba(79,142,247,0.15)",
-          boxShadow: scrolled ? "0 8px 24px rgba(0,0,0,0.35)" : "none",
           opacity: scrolled ? 1 : 0,
           transform: scrolled ? "translateY(0)" : "translateY(-16px)",
           pointerEvents: scrolled ? "auto" : "none",
-          transition: "opacity 0.4s ease, transform 0.4s ease, box-shadow 0.4s ease",
+          transition: "opacity 0.4s ease, transform 0.4s ease",
         }}
       >
-        {/* Left: mark + name */}
-        <motion.button
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        {/* Left: logo */}
+        <button
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           style={{
-            pointerEvents: "all",
+            justifySelf: "start",
             display: "flex",
             alignItems: "center",
             gap: "6px",
@@ -104,28 +98,10 @@ export function KaviNavbar() {
           >
             ✦ Kavi.
           </span>
-        </motion.button>
+        </button>
 
-        {/* Center: scrollspy pill nav */}
-        <motion.nav
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="nav-pill-group"
-          style={{
-            pointerEvents: "all",
-            position: "absolute",
-            left: "50%",
-            top: 0,
-            bottom: 0,
-            margin: "auto 0",
-            transform: "translateX(-50%)",
-            display: "flex",
-            alignItems: "center",
-            gap: "2px",
-            height: "fit-content",
-          }}
-        >
+        {/* Middle: page links */}
+        <nav className="nav-links" style={{ display: "flex", alignItems: "center", gap: "2px" }}>
           {navLinks.map((link) => (
             <NavLink
               key={link.id}
@@ -134,16 +110,10 @@ export function KaviNavbar() {
               onClick={() => scrollTo(link.id)}
             />
           ))}
-        </motion.nav>
+        </nav>
 
         {/* Right: theme toggle + Say Hi */}
-        <motion.div
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="nav-right"
-          style={{ pointerEvents: "all", display: "flex", alignItems: "center", gap: "10px" }}
-        >
+        <div style={{ justifySelf: "end", display: "flex", alignItems: "center", gap: "10px" }}>
           <div className="nav-right-desktop" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <ThemeToggle />
             <div
@@ -199,8 +169,8 @@ export function KaviNavbar() {
           >
             ☰
           </button>
-        </motion.div>
-      </div>
+        </div>
+      </header>
 
       {/* Mobile overlay */}
       <AnimatePresence>
@@ -295,7 +265,7 @@ export function KaviNavbar() {
 
       <style>{`
         @media (max-width: 1100px) {
-          .nav-pill-group { display: none !important; }
+          .nav-links { display: none !important; }
           .nav-right-desktop { display: none !important; }
           .nav-mobile-btn { display: block !important; }
         }

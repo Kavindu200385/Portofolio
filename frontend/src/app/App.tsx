@@ -5,6 +5,9 @@ import { AdminAuthProvider } from "./admin/AdminAuthContext";
 import { AdminRouteGuard } from "./admin/AdminRouteGuard";
 import { AdminLoginPage } from "./admin/AdminLoginPage";
 import { AdminHeroEditorPage } from "./admin/AdminHeroEditorPage";
+import { AdminProjectsPage } from "./admin/AdminProjectsPage";
+import { AdminExperiencePage } from "./admin/AdminExperiencePage";
+import { AdminAboutPage } from "./admin/AdminAboutPage";
 import { Toaster } from "./components/ui/sonner";
 import { KaviCursor } from "./components/KaviCursor";
 import { KaviNavbar } from "./components/KaviNavbar";
@@ -175,6 +178,30 @@ export default function App() {
             element={
               <AdminRouteGuard>
                 <AdminHeroEditorPage />
+              </AdminRouteGuard>
+            }
+          />
+          <Route
+            path="/admin/projects"
+            element={
+              <AdminRouteGuard>
+                <AdminProjectsPage />
+              </AdminRouteGuard>
+            }
+          />
+          <Route
+            path="/admin/experience"
+            element={
+              <AdminRouteGuard>
+                <AdminExperiencePage />
+              </AdminRouteGuard>
+            }
+          />
+          <Route
+            path="/admin/about"
+            element={
+              <AdminRouteGuard>
+                <AdminAboutPage />
               </AdminRouteGuard>
             }
           />

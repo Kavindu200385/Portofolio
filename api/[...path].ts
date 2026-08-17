@@ -209,28 +209,13 @@ export default async function handler(req: any, res: any) {
     }
 
     // —— Projects ——
-    if (seg[0] === "projects") {
-      if (seg.length === 1) {
-        if (method === "GET") {
-          const list = await Project.find().sort({ featured: -1, order: 1 }).lean();
-          return res.status(200).json(list);
-        }
-        if (method === "POST") {
-          if (!(await requireAdminJwt(req, res))) return;
-          const raw = normalizeProjectBody(req.body);
-          const imgErr =
-            rejectDataImageField("mainPhoto", raw.mainPhoto) ||
-            rejectDataImagesInStringArray("additionalPhotos", raw.additionalPhotos);
-          if (imgErr) return res.status(400).json({ error: imgErr });
-          const max = await Project.findOne().sort({ order: -1 }).select("order").lean();
-          const nextOrder = (max?.order ?? -1) + 1;
-          const doc = await new Project({ ...raw, order: raw.order || nextOrder }).save();
-          return res.status(201).json(doc);
-        }
-        res.setHeader("Allow", ["GET", "POST"]);
-        return res.status(405).json({ error: "Method not allowed" });
-      }
-      if (seg.length === 2 && seg[1] === "reorder") {
+    // NOTE: id and reorder are passed as query params (?id=..., ?reorder=1), not extra path
+    // segments — this Vercel deployment 404s on 2+ segment /api/ paths (see admin-login note above).
+    if (seg[0] === "projects" && seg.length === 1) {
+      const id = typeof req.query?.id === "string" ? req.query.id : undefined;
+      const isReorder = req.query?.reorder != null;
+
+      if (isReorder) {
         if (method !== "PUT") {
           res.setHeader("Allow", ["PUT"]);
           return res.status(405).json({ error: "Method not allowed" });
@@ -247,8 +232,8 @@ export default async function handler(req: any, res: any) {
         const list = await Project.find().sort({ featured: -1, order: 1 }).lean();
         return res.status(200).json(list);
       }
-      if (seg.length === 2) {
-        const id = seg[1];
+
+      if (id) {
         if (method === "PUT" || method === "DELETE") {
           if (!mongoose.isValidObjectId(id)) return invalidMongoIdResponse(res);
         }
@@ -272,29 +257,33 @@ export default async function handler(req: any, res: any) {
         res.setHeader("Allow", ["PUT", "DELETE"]);
         return res.status(405).json({ error: "Method not allowed" });
       }
+
+      if (method === "GET") {
+        const list = await Project.find().sort({ featured: -1, order: 1 }).lean();
+        return res.status(200).json(list);
+      }
+      if (method === "POST") {
+        if (!(await requireAdminJwt(req, res))) return;
+        const raw = normalizeProjectBody(req.body);
+        const imgErr =
+          rejectDataImageField("mainPhoto", raw.mainPhoto) ||
+          rejectDataImagesInStringArray("additionalPhotos", raw.additionalPhotos);
+        if (imgErr) return res.status(400).json({ error: imgErr });
+        const max = await Project.findOne().sort({ order: -1 }).select("order").lean();
+        const nextOrder = (max?.order ?? -1) + 1;
+        const doc = await new Project({ ...raw, order: raw.order || nextOrder }).save();
+        return res.status(201).json(doc);
+      }
+      res.setHeader("Allow", ["GET", "POST"]);
+      return res.status(405).json({ error: "Method not allowed" });
     }
 
     // —— Skills ——
-    if (seg[0] === "skills") {
-      if (seg.length === 1) {
-        if (method === "GET") {
-          const list = await Skill.find().sort({ order: 1 }).lean();
-          return res.status(200).json(list);
-        }
-        if (method === "POST") {
-          if (!(await requireAdminJwt(req, res))) return;
-          const raw = normalizeSkillBody(req.body);
-          const ie = rejectDataImageField("icon", raw.icon);
-          if (ie) return res.status(400).json({ error: ie });
-          const max = await Skill.findOne().sort({ order: -1 }).select("order").lean();
-          const nextOrder = (max?.order ?? -1) + 1;
-          const doc = await new Skill({ ...raw, order: raw.order || nextOrder }).save();
-          return res.status(201).json(doc);
-        }
-        res.setHeader("Allow", ["GET", "POST"]);
-        return res.status(405).json({ error: "Method not allowed" });
-      }
-      if (seg.length === 2 && seg[1] === "reorder") {
+    if (seg[0] === "skills" && seg.length === 1) {
+      const id = typeof req.query?.id === "string" ? req.query.id : undefined;
+      const isReorder = req.query?.reorder != null;
+
+      if (isReorder) {
         if (method !== "PUT") {
           res.setHeader("Allow", ["PUT"]);
           return res.status(405).json({ error: "Method not allowed" });
@@ -311,8 +300,8 @@ export default async function handler(req: any, res: any) {
         const list = await Skill.find().sort({ order: 1 }).lean();
         return res.status(200).json(list);
       }
-      if (seg.length === 2) {
-        const id = seg[1];
+
+      if (id) {
         if (method === "PUT" || method === "DELETE") {
           if (!mongoose.isValidObjectId(id)) return invalidMongoIdResponse(res);
         }
@@ -334,29 +323,31 @@ export default async function handler(req: any, res: any) {
         res.setHeader("Allow", ["PUT", "DELETE"]);
         return res.status(405).json({ error: "Method not allowed" });
       }
+
+      if (method === "GET") {
+        const list = await Skill.find().sort({ order: 1 }).lean();
+        return res.status(200).json(list);
+      }
+      if (method === "POST") {
+        if (!(await requireAdminJwt(req, res))) return;
+        const raw = normalizeSkillBody(req.body);
+        const ie = rejectDataImageField("icon", raw.icon);
+        if (ie) return res.status(400).json({ error: ie });
+        const max = await Skill.findOne().sort({ order: -1 }).select("order").lean();
+        const nextOrder = (max?.order ?? -1) + 1;
+        const doc = await new Skill({ ...raw, order: raw.order || nextOrder }).save();
+        return res.status(201).json(doc);
+      }
+      res.setHeader("Allow", ["GET", "POST"]);
+      return res.status(405).json({ error: "Method not allowed" });
     }
 
     // —— Experience ——
-    if (seg[0] === "experience") {
-      if (seg.length === 1) {
-        if (method === "GET") {
-          const list = await Experience.find().sort({ order: 1 }).lean();
-          return res.status(200).json(list);
-        }
-        if (method === "POST") {
-          if (!(await requireAdminJwt(req, res))) return;
-          const raw = experienceFromClient(req.body);
-          const le = rejectDataImageField("companyLogo", raw.companyLogo);
-          if (le) return res.status(400).json({ error: le });
-          const max = await Experience.findOne().sort({ order: -1 }).select("order").lean();
-          const nextOrder = (max?.order ?? -1) + 1;
-          const doc = await new Experience({ ...raw, order: raw.order || nextOrder }).save();
-          return res.status(201).json(doc);
-        }
-        res.setHeader("Allow", ["GET", "POST"]);
-        return res.status(405).json({ error: "Method not allowed" });
-      }
-      if (seg.length === 2 && seg[1] === "reorder") {
+    if (seg[0] === "experience" && seg.length === 1) {
+      const id = typeof req.query?.id === "string" ? req.query.id : undefined;
+      const isReorder = req.query?.reorder != null;
+
+      if (isReorder) {
         if (method !== "PUT") {
           res.setHeader("Allow", ["PUT"]);
           return res.status(405).json({ error: "Method not allowed" });
@@ -373,8 +364,8 @@ export default async function handler(req: any, res: any) {
         const list = await Experience.find().sort({ order: 1 }).lean();
         return res.status(200).json(list);
       }
-      if (seg.length === 2) {
-        const id = seg[1];
+
+      if (id) {
         if (method === "PUT" || method === "DELETE") {
           if (!mongoose.isValidObjectId(id)) return invalidMongoIdResponse(res);
         }
@@ -396,29 +387,31 @@ export default async function handler(req: any, res: any) {
         res.setHeader("Allow", ["PUT", "DELETE"]);
         return res.status(405).json({ error: "Method not allowed" });
       }
+
+      if (method === "GET") {
+        const list = await Experience.find().sort({ order: 1 }).lean();
+        return res.status(200).json(list);
+      }
+      if (method === "POST") {
+        if (!(await requireAdminJwt(req, res))) return;
+        const raw = experienceFromClient(req.body);
+        const le = rejectDataImageField("companyLogo", raw.companyLogo);
+        if (le) return res.status(400).json({ error: le });
+        const max = await Experience.findOne().sort({ order: -1 }).select("order").lean();
+        const nextOrder = (max?.order ?? -1) + 1;
+        const doc = await new Experience({ ...raw, order: raw.order || nextOrder }).save();
+        return res.status(201).json(doc);
+      }
+      res.setHeader("Allow", ["GET", "POST"]);
+      return res.status(405).json({ error: "Method not allowed" });
     }
 
     // —— Education ——
-    if (seg[0] === "education") {
-      if (seg.length === 1) {
-        if (method === "GET") {
-          const list = await Education.find().sort({ order: 1 }).lean();
-          return res.status(200).json(list);
-        }
-        if (method === "POST") {
-          if (!(await requireAdminJwt(req, res))) return;
-          const raw = educationFromClient(req.body);
-          const le = rejectDataImageField("institutionLogo", raw.institutionLogo);
-          if (le) return res.status(400).json({ error: le });
-          const max = await Education.findOne().sort({ order: -1 }).select("order").lean();
-          const nextOrder = (max?.order ?? -1) + 1;
-          const doc = await new Education({ ...raw, order: raw.order || nextOrder }).save();
-          return res.status(201).json(doc);
-        }
-        res.setHeader("Allow", ["GET", "POST"]);
-        return res.status(405).json({ error: "Method not allowed" });
-      }
-      if (seg.length === 2 && seg[1] === "reorder") {
+    if (seg[0] === "education" && seg.length === 1) {
+      const id = typeof req.query?.id === "string" ? req.query.id : undefined;
+      const isReorder = req.query?.reorder != null;
+
+      if (isReorder) {
         if (method !== "PUT") {
           res.setHeader("Allow", ["PUT"]);
           return res.status(405).json({ error: "Method not allowed" });
@@ -435,8 +428,8 @@ export default async function handler(req: any, res: any) {
         const list = await Education.find().sort({ order: 1 }).lean();
         return res.status(200).json(list);
       }
-      if (seg.length === 2) {
-        const id = seg[1];
+
+      if (id) {
         if (method === "PUT" || method === "DELETE") {
           if (!mongoose.isValidObjectId(id)) return invalidMongoIdResponse(res);
         }
@@ -458,6 +451,23 @@ export default async function handler(req: any, res: any) {
         res.setHeader("Allow", ["PUT", "DELETE"]);
         return res.status(405).json({ error: "Method not allowed" });
       }
+
+      if (method === "GET") {
+        const list = await Education.find().sort({ order: 1 }).lean();
+        return res.status(200).json(list);
+      }
+      if (method === "POST") {
+        if (!(await requireAdminJwt(req, res))) return;
+        const raw = educationFromClient(req.body);
+        const le = rejectDataImageField("institutionLogo", raw.institutionLogo);
+        if (le) return res.status(400).json({ error: le });
+        const max = await Education.findOne().sort({ order: -1 }).select("order").lean();
+        const nextOrder = (max?.order ?? -1) + 1;
+        const doc = await new Education({ ...raw, order: raw.order || nextOrder }).save();
+        return res.status(201).json(doc);
+      }
+      res.setHeader("Allow", ["GET", "POST"]);
+      return res.status(405).json({ error: "Method not allowed" });
     }
 
     // —— About / Hero / Contact (singletons) ——

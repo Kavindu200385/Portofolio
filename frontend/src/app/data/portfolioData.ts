@@ -130,10 +130,6 @@ async function fetchJsonLoose(path: string): Promise<unknown> {
   }
 }
 
-function normalizeProjectNameKey(name: string): string {
-  return name.trim().toLowerCase();
-}
-
 /** Avoid sharing the module’s default project objects with React state (safe merges / updates). */
 function cloneDefaultProjects(): ProjectItem[] {
   return defaultPortfolioData.projects.map((p) => ({
@@ -162,42 +158,6 @@ function fileProjectsOnlyFromEnv(): boolean {
   const env = import.meta.env as Record<string, string | undefined>;
   const v = (env.VITE_USE_FILE_PROJECTS_ONLY ?? "").trim().toLowerCase();
   return v === "true" || v === "1";
-}
-
-/**
- * When MongoDB has only some projects, replacing the full default list makes the rest
- * “disappear” after the API responds. We keep every built-in default and override by
- * matching project name when the API returns a row for that name; API-only names append.
- */
-function mergeProjectsWithDefaults(
-  rawList: unknown[],
-  defaults: ProjectItem[],
-): ProjectItem[] {
-  const apiMapped = rawList.map((d, i) =>
-    mapProjectFromApi(d as Record<string, unknown>, i),
-  );
-  const apiByName = new Map<string, ProjectItem>();
-  for (const p of apiMapped) {
-    const key = normalizeProjectNameKey(p.name);
-    if (key) apiByName.set(key, p);
-  }
-  const defaultNameKeys = new Set(
-    defaults.map((d) => normalizeProjectNameKey(d.name)).filter(Boolean),
-  );
-  const merged: ProjectItem[] = defaults.map((d) => {
-    const key = normalizeProjectNameKey(d.name);
-    if (key && apiByName.has(key)) {
-      return apiByName.get(key)!;
-    }
-    return d;
-  });
-  for (const p of apiMapped) {
-    const key = normalizeProjectNameKey(p.name);
-    if (key && !defaultNameKeys.has(key)) {
-      merged.push(p);
-    }
-  }
-  return merged;
 }
 
 function buildHero(rawHero: unknown): HeroData {
@@ -236,13 +196,10 @@ function buildPortfolioData(
       return cloneDefaultProjects();
     }
     const unwrapped = unwrapProjectsPayload(rawProjects);
-    if (unwrapped == null) {
+    if (unwrapped == null || unwrapped.length === 0) {
       return cloneDefaultProjects();
     }
-    if (unwrapped.length === 0) {
-      return cloneDefaultProjects();
-    }
-    return mergeProjectsWithDefaults(unwrapped, cloneDefaultProjects());
+    return unwrapped.map((d, i) => mapProjectFromApi(d as Record<string, unknown>, i));
   })();
 
   const skills: SkillItem[] = (() => {

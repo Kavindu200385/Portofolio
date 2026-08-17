@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Input } from "../components/ui/input";
@@ -9,11 +9,10 @@ import { Progress } from "../components/ui/progress";
 import { usePortfolioData, type HeroData } from "../data/portfolioData";
 import { apiUrl } from "../lib/apiBase";
 import { uploadHeroVideo } from "./lib/uploadHeroVideo";
-import { useAdminAuth } from "./AdminAuthContext";
+import { AdminLayout } from "./AdminLayout";
 
 export function AdminHeroEditorPage() {
   const { data, refetch } = usePortfolioData();
-  const { email, logout } = useAdminAuth();
   const [videoUploading, setVideoUploading] = useState(false);
   const [videoProgress, setVideoProgress] = useState(0);
   const [saving, setSaving] = useState(false);
@@ -24,7 +23,16 @@ export function AdminHeroEditorPage() {
     handleSubmit,
     setValue,
     watch,
+    reset,
+    formState: { isDirty },
   } = useForm<HeroData>({ defaultValues: data.hero });
+
+  // `data.hero` arrives asynchronously after mount — sync the form once it lands so the
+  // editor doesn't show stale/default values that would overwrite real data on save.
+  useEffect(() => {
+    if (!isDirty) reset(data.hero);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data.hero]);
 
   const heroVideo = watch("heroVideo");
 
@@ -68,29 +76,12 @@ export function AdminHeroEditorPage() {
   };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        padding: "40px 24px 80px",
-        background: "var(--background)",
-        color: "var(--foreground)",
-      }}
-    >
-      <div style={{ maxWidth: "640px", margin: "0 auto" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "28px" }}>
-          <div>
-            <h1 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: "24px", fontWeight: 800, margin: 0 }}>
-              Hero
-            </h1>
-            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "13px", color: "rgba(255,255,255,0.5)", margin: "4px 0 0 0" }}>
-              Signed in as {email}
-            </p>
-          </div>
-          <Button variant="outline" onClick={() => void logout()}>
-            Log out
-          </Button>
-        </div>
+    <AdminLayout>
+      <h1 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: "24px", fontWeight: 800, margin: "0 0 24px 0" }}>
+        Hero
+      </h1>
 
+      <div style={{ maxWidth: "640px" }}>
         <form onSubmit={handleSubmit(onSubmit)} style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
           <Field label="Heading">
             <Textarea rows={2} {...register("heading")} />
@@ -152,7 +143,7 @@ export function AdminHeroEditorPage() {
           </Button>
         </form>
       </div>
-    </div>
+    </AdminLayout>
   );
 }
 
