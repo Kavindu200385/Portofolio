@@ -11,7 +11,11 @@ export function KaviWorks() {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
   const { data, loading } = usePortfolioData();
-  const projects = data.projects.slice(3, 9);
+  // Normally the "next 6" after the featured teaser's first 3 — but if there aren't enough
+  // projects for that split (e.g. only 1-3 total), fall back to showing whatever exists so
+  // this section (and the "Work" nav link, which points here) isn't silently invisible.
+  const rest = data.projects.slice(3, 9);
+  const projects = rest.length > 0 ? rest : data.projects;
 
   if (projects.length === 0) return null;
 
