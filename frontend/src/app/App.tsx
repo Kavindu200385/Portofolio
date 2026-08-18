@@ -7,6 +7,7 @@ import { AdminLoginPage } from "./admin/AdminLoginPage";
 import { AdminHeroEditorPage } from "./admin/AdminHeroEditorPage";
 import { AdminProjectsPage } from "./admin/AdminProjectsPage";
 import { AdminExperiencePage } from "./admin/AdminExperiencePage";
+import { AdminEducationPage } from "./admin/AdminEducationPage";
 import { AdminAboutPage } from "./admin/AdminAboutPage";
 import { Toaster } from "./components/ui/sonner";
 import { Layout } from "./components/Layout";
@@ -93,6 +94,14 @@ export default function App() {
             element={
               <AdminRouteGuard>
                 <AdminExperiencePage />
+              </AdminRouteGuard>
+            }
+          />
+          <Route
+            path="/admin/education"
+            element={
+              <AdminRouteGuard>
+                <AdminEducationPage />
               </AdminRouteGuard>
             }
           />

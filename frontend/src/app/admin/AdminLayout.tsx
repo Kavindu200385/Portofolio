@@ -9,6 +9,7 @@ const ADMIN_NAV = [
   { label: "Hero", to: "/admin" },
   { label: "Projects", to: "/admin/projects" },
   { label: "Experience", to: "/admin/experience" },
+  { label: "Education", to: "/admin/education" },
   { label: "About", to: "/admin/about" },
 ];
 
