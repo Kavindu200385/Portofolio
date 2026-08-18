@@ -80,6 +80,7 @@ export function KaviNavbar() {
           background: "rgba(19,33,77,0.35)",
           backdropFilter: "blur(24px)",
           WebkitBackdropFilter: "blur(24px)",
+          color: "#fff",
           opacity: scrolled ? 1 : 0,
           transform: scrolled ? "translateY(0)" : "translateY(-16px)",
           pointerEvents: scrolled ? "auto" : "none",
@@ -201,7 +202,8 @@ export function KaviNavbar() {
               position: "fixed",
               inset: 0,
               zIndex: 2000,
-              background: "rgba(8,8,16,0.97)",
+              background: "var(--background)",
+              color: "var(--foreground)",
               backdropFilter: "blur(24px)",
               display: "flex",
               flexDirection: "column",
@@ -221,7 +223,7 @@ export function KaviNavbar() {
                 right: "24px",
                 background: "none",
                 border: "none",
-                color: "rgba(255,255,255,0.5)",
+                color: "rgba(var(--fg-rgb),0.5)",
                 fontSize: "24px",
                 cursor: "none",
               }}
@@ -245,7 +247,7 @@ export function KaviNavbar() {
                   fontFamily: "'Plus Jakarta Sans', sans-serif",
                   fontSize: "28px",
                   fontWeight: 700,
-                  color: "#fff",
+                  color: "var(--foreground)",
                 }}
               >
                 {link.label}

@@ -2,6 +2,9 @@
 
 :root {
   --font-size: 16px;
+  --fg-rgb: 10, 10, 15;
+  --card-rgb: 10, 10, 15;
+  --section-alt-bg: rgba(0, 0, 0, 0.03);
   --background: #ffffff;
   --foreground: oklch(0.145 0 0);
   --card: #ffffff;
@@ -42,6 +45,9 @@
 }
 
 .dark {
+  --fg-rgb: 255, 255, 255;
+  --card-rgb: 255, 255, 255;
+  --section-alt-bg: rgba(14, 14, 28, 0.5);
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.145 0 0);

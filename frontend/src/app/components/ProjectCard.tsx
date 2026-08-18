@@ -107,7 +107,7 @@ export function ProjectCard({
             fontWeight: 600,
             letterSpacing: "0.06em",
             textTransform: "uppercase",
-            color: "rgba(255,255,255,0.4)",
+            color: "rgba(var(--fg-rgb),0.4)",
           }}
         >
           {categoryTags.join(" · ")}
@@ -117,7 +117,7 @@ export function ProjectCard({
             style={{
               fontFamily: "'Inter', sans-serif",
               fontSize: "12px",
-              color: "rgba(255,255,255,0.3)",
+              color: "rgba(var(--fg-rgb),0.3)",
               letterSpacing: "0.04em",
             }}
           >
@@ -132,7 +132,7 @@ export function ProjectCard({
           fontFamily: "'Plus Jakarta Sans', sans-serif",
           fontSize: "22px",
           fontWeight: 700,
-          color: "#fff",
+          color: "var(--foreground)",
           marginTop: "10px",
           letterSpacing: "-0.02em",
         }}
@@ -146,7 +146,7 @@ export function ProjectCard({
           fontFamily: "'Inter', sans-serif",
           fontSize: "14px",
           lineHeight: 1.6,
-          color: "rgba(255,255,255,0.5)",
+          color: "rgba(var(--fg-rgb),0.5)",
           margin: "6px 0 0 0",
         }}
       >

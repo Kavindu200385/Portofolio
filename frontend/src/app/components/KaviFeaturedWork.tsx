@@ -41,7 +41,7 @@ export function KaviFeaturedWork() {
               fontFamily: "'Plus Jakarta Sans', sans-serif",
               fontSize: "clamp(28px, 4vw, 48px)",
               fontWeight: 800,
-              color: "#fff",
+              color: "var(--foreground)",
               letterSpacing: "-0.03em",
               margin: 0,
             }}
@@ -55,7 +55,7 @@ export function KaviFeaturedWork() {
             style={{
               fontFamily: "'Inter', sans-serif",
               fontSize: "14px",
-              color: "rgba(255,255,255,0.4)",
+              color: "rgba(var(--fg-rgb),0.4)",
               margin: 0,
               textAlign: "right",
               maxWidth: "360px",

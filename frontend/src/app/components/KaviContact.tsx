@@ -63,8 +63,8 @@ function SocialBtn({ label, icon, href, color }: SocialBtnProps) {
         gap: "10px",
         padding: "20px 24px",
         borderRadius: "18px",
-        background: hov ? `${color}14` : "rgba(255,255,255,0.04)",
-        border: `1px solid ${hov ? `${color}40` : "rgba(255,255,255,0.08)"}`,
+        background: hov ? `${color}14` : "rgba(var(--fg-rgb),0.04)",
+        border: `1px solid ${hov ? `${color}40` : "rgba(var(--fg-rgb),0.08)"}`,
         backdropFilter: "blur(20px)",
         textDecoration: "none",
         cursor: "none",
@@ -79,7 +79,7 @@ function SocialBtn({ label, icon, href, color }: SocialBtnProps) {
           fontFamily: "'Inter', sans-serif",
           fontSize: "12px",
           fontWeight: 500,
-          color: hov ? "#fff" : "rgba(255,255,255,0.5)",
+          color: hov ? "var(--foreground)" : "rgba(var(--fg-rgb),0.5)",
           transition: "color 200ms ease",
           letterSpacing: "0.04em",
         }}
@@ -169,7 +169,7 @@ export function KaviContact() {
             fontFamily: "'Plus Jakarta Sans', sans-serif",
             fontSize: "clamp(36px, 6vw, 72px)",
             fontWeight: 800,
-            color: "#fff",
+            color: "var(--foreground)",
             letterSpacing: "-0.04em",
             lineHeight: 1.05,
             margin: "0 0 24px 0",
@@ -186,7 +186,7 @@ export function KaviContact() {
             fontFamily: "'Inter', sans-serif",
             fontSize: "clamp(15px, 1.8vw, 17px)",
             lineHeight: 1.7,
-            color: "rgba(255,255,255,0.5)",
+            color: "rgba(var(--fg-rgb),0.5)",
             maxWidth: "520px",
             margin: "0 auto 52px",
           }}
@@ -236,15 +236,15 @@ export function KaviContact() {
             style={{
               background: emailCopied
                 ? "rgba(16,185,129,0.15)"
-                : "rgba(255,255,255,0.06)",
-              border: `1px solid ${emailCopied ? "rgba(16,185,129,0.4)" : "rgba(255,255,255,0.1)"}`,
+                : "rgba(var(--fg-rgb),0.06)",
+              border: `1px solid ${emailCopied ? "rgba(16,185,129,0.4)" : "rgba(var(--fg-rgb),0.1)"}`,
               borderRadius: "10px",
               padding: "8px 14px",
               cursor: "none",
               fontFamily: "'Inter', sans-serif",
               fontSize: "13px",
               fontWeight: 500,
-              color: emailCopied ? "#10b981" : "rgba(255,255,255,0.6)",
+              color: emailCopied ? "#10b981" : "rgba(var(--fg-rgb),0.6)",
               transition: "all 200ms ease",
               display: "flex",
               alignItems: "center",
@@ -285,7 +285,7 @@ export function KaviContact() {
           style={{
             fontFamily: "'Inter', sans-serif",
             fontSize: "14px",
-            color: "rgba(255,255,255,0.3)",
+            color: "rgba(var(--fg-rgb),0.3)",
             marginBottom: "48px",
             letterSpacing: "0.06em",
           }}
@@ -304,7 +304,7 @@ export function KaviContact() {
             fontWeight: 600,
             letterSpacing: "0.12em",
             textTransform: "uppercase",
-            color: "rgba(255,255,255,0.35)",
+            color: "rgba(var(--fg-rgb),0.35)",
             marginBottom: "20px",
           }}
         >

@@ -82,12 +82,12 @@ function TimelineCard({
           maxWidth: "440px",
           padding: "24px",
           borderRadius: "20px",
-          background: "rgba(255,255,255,0.04)",
+          background: "rgba(var(--fg-rgb),0.04)",
           backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",
           border: isCurrentExperience
             ? "1px solid rgba(34,197,94,0.5)"
-            : "1px solid rgba(255,255,255,0.08)",
+            : "1px solid rgba(var(--fg-rgb),0.08)",
           boxShadow: isCurrentExperience
             ? "0 0 0 1px rgba(34,197,94,0.2), 0 0 48px rgba(34,197,94,0.22), 0 4px 24px rgba(0,0,0,0.2)"
             : "0 4px 24px rgba(0,0,0,0.2)",
@@ -139,7 +139,7 @@ function TimelineCard({
                   fontFamily: "'Plus Jakarta Sans', sans-serif",
                   fontSize: "15px",
                   fontWeight: 700,
-                  color: "#fff",
+                  color: "var(--foreground)",
                   lineHeight: 1.3,
                 }}
               >
@@ -149,7 +149,7 @@ function TimelineCard({
                 style={{
                   fontFamily: "'Inter', sans-serif",
                   fontSize: "13px",
-                  color: "rgba(255,255,255,0.5)",
+                  color: "rgba(var(--fg-rgb),0.5)",
                   marginTop: "2px",
                 }}
               >
@@ -220,7 +220,7 @@ function TimelineCard({
             fontFamily: "'Inter', sans-serif",
             fontSize: "14px",
             lineHeight: 1.65,
-            color: "rgba(255,255,255,0.5)",
+            color: "rgba(var(--fg-rgb),0.5)",
             margin: 0,
           }}
         >
@@ -283,7 +283,7 @@ export function KaviTimeline() {
             fontFamily: "'Plus Jakarta Sans', sans-serif",
             fontSize: "clamp(28px, 4vw, 48px)",
             fontWeight: 800,
-            color: "#fff",
+            color: "var(--foreground)",
             letterSpacing: "-0.03em",
             margin: "20px 0 60px 0",
           }}
@@ -300,7 +300,7 @@ export function KaviTimeline() {
                 fontFamily: "'Plus Jakarta Sans', sans-serif",
                 fontSize: "clamp(22px, 3vw, 32px)",
                 fontWeight: 800,
-                color: "#fff",
+                color: "var(--foreground)",
                 letterSpacing: "-0.03em",
                 lineHeight: 1.1,
                 textAlign: "left",
@@ -336,7 +336,7 @@ export function KaviTimeline() {
         </div>
 
         {/* Thin divider between Experience and Education */}
-        <div style={{ height: 1, background: "rgba(255,255,255,0.08)", margin: "34px 0" }} />
+        <div style={{ height: 1, background: "rgba(var(--fg-rgb),0.08)", margin: "34px 0" }} />
 
         {/* Education subsection */}
         <div style={{ marginTop: "10px" }}>
@@ -347,7 +347,7 @@ export function KaviTimeline() {
                 fontFamily: "'Plus Jakarta Sans', sans-serif",
                 fontSize: "clamp(22px, 3vw, 32px)",
                 fontWeight: 800,
-                color: "#fff",
+                color: "var(--foreground)",
                 letterSpacing: "-0.03em",
                 lineHeight: 1.1,
                 textAlign: "left",

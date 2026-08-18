@@ -163,14 +163,14 @@ export function KaviAbout() {
                         fontWeight: 700,
                         lineHeight: 1.35,
                         letterSpacing: "-0.02em",
-                        color: "#fff",
+                        color: "var(--foreground)",
                         marginBottom: "20px",
                       }
                     : {
                         fontFamily: "'Inter', sans-serif",
                         fontSize: "16px",
                         lineHeight: 1.75,
-                        color: "rgba(255,255,255,0.6)",
+                        color: "rgba(var(--fg-rgb),0.6)",
                         marginBottom: "16px",
                       }
                 }
@@ -196,7 +196,7 @@ export function KaviAbout() {
                 fontStyle: "italic",
                 fontSize: "15px",
                 lineHeight: 1.7,
-                color: "rgba(255,255,255,0.65)",
+                color: "rgba(var(--fg-rgb),0.65)",
               }}
             >
               "{pullQuote}"
@@ -228,7 +228,7 @@ export function KaviAbout() {
                   fontFamily: "'Inter', sans-serif",
                   fontSize: "13px",
                   fontWeight: 500,
-                  color: "rgba(255,255,255,0.7)",
+                  color: "rgba(var(--fg-rgb),0.7)",
                   cursor: "default",
                 }}
               >
@@ -282,7 +282,7 @@ export function KaviAbout() {
                 fontFamily: "'Inter', sans-serif",
                 fontSize: "14px",
                 fontWeight: 500,
-                color: "rgba(255,255,255,0.7)",
+                color: "rgba(var(--fg-rgb),0.7)",
                 cursor: "none",
               }}
             >

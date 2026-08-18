@@ -28,8 +28,8 @@ function SkillCard({
         gridColumn: skill.size === "wide" ? "span 2" : "span 1",
         padding: "24px",
         borderRadius: "20px",
-        background: hov ? "rgba(79,142,247,0.07)" : "rgba(255,255,255,0.04)",
-        border: `1px solid ${hov ? "rgba(79,142,247,0.25)" : "rgba(255,255,255,0.07)"}`,
+        background: hov ? "rgba(79,142,247,0.07)" : "rgba(var(--fg-rgb),0.04)",
+        border: `1px solid ${hov ? "rgba(79,142,247,0.25)" : "rgba(var(--fg-rgb),0.07)"}`,
         backdropFilter: "blur(20px)",
         WebkitBackdropFilter: "blur(20px)",
         cursor: "default",
@@ -48,7 +48,7 @@ function SkillCard({
             position: "absolute",
             inset: 0,
             background:
-              "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.06) 50%, transparent 70%)",
+              "linear-gradient(105deg, transparent 30%, rgba(var(--fg-rgb),0.06) 50%, transparent 70%)",
             pointerEvents: "none",
           }}
         />
@@ -78,7 +78,7 @@ function SkillCard({
           fontFamily: "'Plus Jakarta Sans', sans-serif",
           fontSize: "16px",
           fontWeight: 700,
-          color: hov ? "#fff" : "rgba(255,255,255,0.9)",
+          color: hov ? "var(--foreground)" : "rgba(var(--fg-rgb),0.9)",
           marginBottom: "6px",
           transition: "color 200ms ease",
         }}
@@ -90,7 +90,7 @@ function SkillCard({
           fontFamily: "'Inter', sans-serif",
           fontSize: "13px",
           lineHeight: 1.6,
-          color: "rgba(255,255,255,0.4)",
+          color: "rgba(var(--fg-rgb),0.4)",
           margin: 0,
         }}
       >
@@ -112,7 +112,7 @@ export function KaviSkills() {
       ref={ref}
       style={{
         padding: "120px 24px",
-        background: "rgba(14,14,28,0.5)",
+        background: "var(--section-alt-bg)",
         opacity: loading ? 0.92 : 1,
         transition: "opacity 0.35s ease",
       }}
@@ -137,7 +137,7 @@ export function KaviSkills() {
               fontFamily: "'Plus Jakarta Sans', sans-serif",
               fontSize: "clamp(28px, 4vw, 48px)",
               fontWeight: 800,
-              color: "#fff",
+              color: "var(--foreground)",
               letterSpacing: "-0.03em",
               margin: 0,
             }}
@@ -151,7 +151,7 @@ export function KaviSkills() {
             style={{
               fontFamily: "'Inter', sans-serif",
               fontSize: "14px",
-              color: "rgba(255,255,255,0.35)",
+              color: "rgba(var(--fg-rgb),0.35)",
               margin: 0,
             }}
           >

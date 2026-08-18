@@ -16,7 +16,7 @@ export function KaviFooter() {
     <footer
       style={{
         padding: "0 24px",
-        borderTop: "1px solid rgba(255,255,255,0.06)",
+        borderTop: "1px solid rgba(var(--fg-rgb),0.06)",
       }}
     >
       {/* Fade divider */}
@@ -65,7 +65,7 @@ export function KaviFooter() {
             style={{
               fontFamily: "'Inter', sans-serif",
               fontSize: "13px",
-              color: "rgba(255,255,255,0.25)",
+              color: "rgba(var(--fg-rgb),0.25)",
             }}
           >
             © {new Date().getFullYear()} Kavindu Sandaruwan. All rights reserved. · Designed and built by Kavindu Sandaruwan
@@ -85,16 +85,16 @@ export function KaviFooter() {
                 fontFamily: "'Inter', sans-serif",
                 fontSize: "13px",
                 fontWeight: 400,
-                color: "rgba(255,255,255,0.35)",
+                color: "rgba(var(--fg-rgb),0.35)",
                 textDecoration: "none",
                 transition: "color 150ms ease",
                 cursor: "none",
               }}
               onMouseEnter={(e) =>
-                ((e.target as HTMLElement).style.color = "rgba(255,255,255,0.8)")
+                ((e.target as HTMLElement).style.color = "rgba(var(--fg-rgb),0.8)")
               }
               onMouseLeave={(e) =>
-                ((e.target as HTMLElement).style.color = "rgba(255,255,255,0.35)")
+                ((e.target as HTMLElement).style.color = "rgba(var(--fg-rgb),0.35)")
               }
             >
               {s.label}

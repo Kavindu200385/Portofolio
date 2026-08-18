@@ -46,7 +46,7 @@ export function KaviWorks() {
               fontFamily: "'Plus Jakarta Sans', sans-serif",
               fontSize: "clamp(28px, 4vw, 48px)",
               fontWeight: 800,
-              color: "#fff",
+              color: "var(--foreground)",
               letterSpacing: "-0.03em",
               margin: 0,
             }}
@@ -60,7 +60,7 @@ export function KaviWorks() {
             style={{
               fontFamily: "'Inter', sans-serif",
               fontSize: "14px",
-              color: "rgba(255,255,255,0.4)",
+              color: "rgba(var(--fg-rgb),0.4)",
               margin: 0,
               textAlign: "right",
               maxWidth: "360px",
@@ -93,21 +93,21 @@ export function KaviWorks() {
               gap: "8px",
               padding: "13px 28px",
               borderRadius: "100px",
-              border: "1px solid rgba(255,255,255,0.2)",
+              border: "1px solid rgba(var(--fg-rgb),0.2)",
               fontFamily: "'Inter', sans-serif",
               fontSize: "15px",
               fontWeight: 500,
-              color: "#fff",
+              color: "var(--foreground)",
               textDecoration: "none",
               transition: "background 200ms ease, border-color 200ms ease",
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.08)";
-              (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.4)";
+              (e.currentTarget as HTMLElement).style.background = "rgba(var(--fg-rgb),0.08)";
+              (e.currentTarget as HTMLElement).style.borderColor = "rgba(var(--fg-rgb),0.4)";
             }}
             onMouseLeave={(e) => {
               (e.currentTarget as HTMLElement).style.background = "transparent";
-              (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.2)";
+              (e.currentTarget as HTMLElement).style.borderColor = "rgba(var(--fg-rgb),0.2)";
             }}
           >
             Show more

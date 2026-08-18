@@ -80,8 +80,8 @@ export function Layout({ children }: { children: ReactNode }) {
           background: linear-gradient(
             90deg,
             transparent,
-            rgba(255, 255, 255, 0.06) 30%,
-            rgba(255, 255, 255, 0.06) 70%,
+            rgba(var(--fg-rgb), 0.06) 30%,
+            rgba(var(--fg-rgb), 0.06) 70%,
             transparent
           );
           max-width: 1200px;
