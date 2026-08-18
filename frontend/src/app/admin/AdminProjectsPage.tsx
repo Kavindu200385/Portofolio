@@ -65,6 +65,7 @@ export function AdminProjectsPage() {
   const [thumbUploading, setThumbUploading] = useState(false);
   const [extraUploading, setExtraUploading] = useState(false);
   const [techInput, setTechInput] = useState("");
+  const [importingDefaults, setImportingDefaults] = useState(false);
   const thumbInputRef = useRef<HTMLInputElement>(null);
   const extraInputRef = useRef<HTMLInputElement>(null);
 
@@ -92,6 +93,25 @@ export function AdminProjectsPage() {
   useEffect(() => {
     void loadProjects();
   }, []);
+
+  const onImportDefaults = async () => {
+    setImportingDefaults(true);
+    try {
+      const res = await fetch(apiUrl("/api/admin-import-default-projects"), {
+        method: "POST",
+        credentials: "include",
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.error || "Import failed");
+      const inserted = json.summary?.inserted ?? 0;
+      toast.success(inserted ? `Imported ${inserted} demo project(s)` : "All demo projects are already in the database");
+      await Promise.all([loadProjects(), refetch()]);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Import failed");
+    } finally {
+      setImportingDefaults(false);
+    }
+  };
 
   const thumbnail = watch("thumbnail");
   const extraImages = watch("extraImages") ?? [];
@@ -222,9 +242,14 @@ export function AdminProjectsPage() {
 
   return (
     <AdminLayout>
-      <h1 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: "24px", fontWeight: 800, margin: "0 0 24px 0" }}>
-        Projects
-      </h1>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px", margin: "0 0 24px 0" }}>
+        <h1 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: "24px", fontWeight: 800, margin: 0 }}>
+          Projects
+        </h1>
+        <Button type="button" variant="outline" size="sm" onClick={() => void onImportDefaults()} disabled={importingDefaults}>
+          {importingDefaults ? "Importing…" : "Import demo projects"}
+        </Button>
+      </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "40px" }}>
         <div style={{ border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>

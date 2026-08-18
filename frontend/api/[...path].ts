@@ -209,6 +209,19 @@ export default async function handler(req: any, res: any) {
       return res.status(200).json({ ok: true, summary });
     }
 
+    // —— Admin: add any built-in demo project not already in the database (by name), even
+    // when Projects already has real entries. Never deletes or overwrites existing projects. ——
+    if (seg[0] === "admin-import-default-projects" && seg.length === 1) {
+      if (method !== "POST") {
+        res.setHeader("Allow", ["POST"]);
+        return res.status(405).json({ error: "Method not allowed" });
+      }
+      if (!(await requireAdminJwt(req, res))) return;
+      const { importMissingDefaultProjects } = await import("../lib/seedDefaultPortfolio.js");
+      const summary = await importMissingDefaultProjects();
+      return res.status(200).json({ ok: true, summary });
+    }
+
     // —— Projects ——
     // NOTE: id and reorder are passed as query params (?id=..., ?reorder=1), not extra path
     // segments — this Vercel deployment 404s on 2+ segment /api/ paths (see admin-login note above).

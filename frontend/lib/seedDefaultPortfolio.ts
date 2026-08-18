@@ -1,7 +1,9 @@
 // @ts-nocheck
 /**
- * Inserts built-in portfolio content into MongoDB only when each collection is empty.
- * Does not delete or overwrite existing documents (safe to run on a partially filled DB).
+ * Inserts built-in portfolio content into MongoDB. `seedDefaultPortfolioIfEmpty` only inserts
+ * when a collection is completely empty; `importMissingDefaultProjects` adds any built-in demo
+ * project not already present by name, even into a non-empty collection. Neither ever deletes
+ * or overwrites existing documents.
  */
 import { defaultPortfolioContent } from "./defaultPortfolioContent.js";
 import { normalizeProjectBody } from "./api/projectBody.js";
@@ -98,4 +100,40 @@ export async function seedDefaultPortfolioIfEmpty() {
   }
 
   return summary;
+}
+
+function normalizeProjectNameKey(name) {
+  return String(name ?? "").trim().toLowerCase();
+}
+
+/**
+ * Adds any built-in demo project whose name isn't already in the database, regardless of
+ * whether the collection is empty. Unlike seedDefaultPortfolioIfEmpty, this can be run even
+ * when Projects already has real entries — it only ever adds, matched by name, never touches
+ * or duplicates an existing project.
+ */
+export async function importMissingDefaultProjects() {
+  const existing = await Project.find().select("name").lean();
+  const existingNames = new Set(existing.map((p) => normalizeProjectNameKey(p.name)));
+
+  const max = await Project.findOne().sort({ order: -1 }).select("order").lean();
+  let nextOrder = (max?.order ?? -1) + 1;
+
+  const insertedNames = [];
+  const skippedNames = [];
+
+  for (const defaultProject of defaultPortfolioContent.projects) {
+    const key = normalizeProjectNameKey(defaultProject.name);
+    if (!key || existingNames.has(key)) {
+      skippedNames.push(defaultProject.name);
+      continue;
+    }
+    const raw = normalizeProjectBody(defaultProject);
+    await new Project({ ...raw, order: nextOrder }).save();
+    nextOrder++;
+    existingNames.add(key);
+    insertedNames.push(defaultProject.name);
+  }
+
+  return { inserted: insertedNames.length, insertedNames, skippedNames };
 }
