@@ -1,4 +1,4 @@
-import { defaultProjects } from "./defaultProjects";
+import { defaultProjects } from "./defaultProjects.js";
 
 /**
  * Built-in portfolio content (same as public fallbacks when the API is empty).
