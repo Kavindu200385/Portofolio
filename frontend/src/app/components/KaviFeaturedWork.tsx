@@ -4,15 +4,19 @@ import { useRef } from "react";
 import { motion, useInView } from "motion/react";
 import { SectionLabel } from "./KaviAbout";
 import { ProjectCard } from "./ProjectCard";
+import { ProjectCardSkeleton } from "./ProjectCardSkeleton";
 import { usePortfolioData } from "../data/portfolioData";
 
 export function KaviFeaturedWork() {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
   const { data, loading } = usePortfolioData();
+  // While the first fetch is still in flight, `data.projects` holds bundled placeholder
+  // content (so the page isn't blank) — never render that as if it were real, show a
+  // skeleton instead so visitors only ever see actual database projects.
   const projects = data.projects.slice(0, 3);
 
-  if (projects.length === 0) return null;
+  if (!loading && projects.length === 0) return null;
 
   return (
     <section
@@ -73,9 +77,9 @@ export function KaviFeaturedWork() {
           }}
           className="featured-work-grid"
         >
-          {projects.map((p, i) => (
-            <ProjectCard key={`${p.id}-${i}`} project={p} index={i} inView={inView} />
-          ))}
+          {loading
+            ? Array.from({ length: 3 }).map((_, i) => <ProjectCardSkeleton key={i} />)
+            : projects.map((p, i) => <ProjectCard key={`${p.id}-${i}`} project={p} index={i} inView={inView} />)}
         </div>
       </div>
 

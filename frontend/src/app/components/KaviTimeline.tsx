@@ -20,6 +20,10 @@ type TimelineEntry = {
   description: string;
 };
 
+function isImageUrl(value: string): boolean {
+  return value.startsWith("http://") || value.startsWith("https://") || value.startsWith("data:") || value.startsWith("/");
+}
+
 function TimelineCard({
   entry,
   index,
@@ -129,9 +133,18 @@ function TimelineCard({
                 justifyContent: "center",
                 fontSize: "22px",
                 flexShrink: 0,
+                overflow: "hidden",
               }}
             >
-              {entry.icon}
+              {isImageUrl(entry.icon) ? (
+                <img
+                  src={entry.icon}
+                  alt={entry.org}
+                  style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "12px" }}
+                />
+              ) : (
+                entry.icon
+              )}
             </div>
             <div>
               <div

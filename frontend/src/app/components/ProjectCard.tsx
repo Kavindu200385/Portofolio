@@ -15,10 +15,8 @@ export function ProjectCard({
   inView: boolean;
 }) {
   const [hov, setHov] = useState(false);
-  const caseStudyHref =
-    (project.liveDemoLink && project.liveDemoLink !== "#" && project.liveDemoLink) ||
-    (project.githubLink && project.githubLink !== "#" && project.githubLink) ||
-    "";
+  const githubHref = project.githubLink && project.githubLink !== "#" ? project.githubLink : "";
+  const demoHref = project.liveDemoLink && project.liveDemoLink !== "#" ? project.liveDemoLink : "";
   const categoryTags = [project.type, ...project.techStack.slice(0, 2)];
 
   return (
@@ -37,10 +35,6 @@ export function ProjectCard({
           overflow: "hidden",
           aspectRatio: "16/10",
           background: "linear-gradient(135deg, rgba(79,142,247,0.18), rgba(124,58,237,0.18))",
-          cursor: caseStudyHref ? "pointer" : "default",
-        }}
-        onClick={() => {
-          if (caseStudyHref) window.open(caseStudyHref, "_blank", "noreferrer");
         }}
       >
         <ImageWithFallback
@@ -54,7 +48,7 @@ export function ProjectCard({
             transition: "transform 400ms ease",
           }}
         />
-        {/* Dark overlay + case-study pill on hover */}
+        {/* Dark overlay + case-study/demo pills on hover */}
         <motion.div
           animate={{ opacity: hov ? 1 : 0 }}
           transition={{ duration: 0.2 }}
@@ -65,10 +59,16 @@ export function ProjectCard({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            gap: "10px",
+            pointerEvents: hov ? "auto" : "none",
           }}
         >
-          {caseStudyHref ? (
-            <span
+          {githubHref ? (
+            <a
+              href={githubHref}
+              target="_blank"
+              rel="noreferrer"
+              onClick={(e) => e.stopPropagation()}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -81,10 +81,36 @@ export function ProjectCard({
                 fontWeight: 600,
                 color: "#080810",
                 letterSpacing: "-0.01em",
+                textDecoration: "none",
               }}
             >
               View case study →
-            </span>
+            </a>
+          ) : null}
+          {demoHref ? (
+            <a
+              href={demoHref}
+              target="_blank"
+              rel="noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "12px 26px",
+                borderRadius: "100px",
+                background: "rgba(255,255,255,0.08)",
+                border: "1px solid rgba(255,255,255,0.5)",
+                fontFamily: "'Inter', sans-serif",
+                fontSize: "14px",
+                fontWeight: 600,
+                color: "#fff",
+                letterSpacing: "-0.01em",
+                textDecoration: "none",
+              }}
+            >
+              Demo
+            </a>
           ) : null}
         </motion.div>
       </div>

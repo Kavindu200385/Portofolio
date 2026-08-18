@@ -5,6 +5,7 @@ import { motion, useInView } from "motion/react";
 import { Link } from "react-router";
 import { SectionLabel } from "./KaviAbout";
 import { ProjectCard } from "./ProjectCard";
+import { ProjectCardSkeleton } from "./ProjectCardSkeleton";
 import { usePortfolioData } from "../data/portfolioData";
 
 export function KaviWorks() {
@@ -14,10 +15,12 @@ export function KaviWorks() {
   // Normally the "next 6" after the featured teaser's first 3 — but if there aren't enough
   // projects for that split (e.g. only 1-3 total), fall back to showing whatever exists so
   // this section (and the "Work" nav link, which points here) isn't silently invisible.
+  // While the first fetch is still in flight, `data.projects` holds bundled placeholder
+  // content — never render that as if it were real, show a skeleton instead.
   const rest = data.projects.slice(3, 9);
   const projects = rest.length > 0 ? rest : data.projects;
 
-  if (projects.length === 0) return null;
+  if (!loading && projects.length === 0) return null;
 
   return (
     <section
@@ -79,9 +82,9 @@ export function KaviWorks() {
           }}
           className="works-grid"
         >
-          {projects.map((p, i) => (
-            <ProjectCard key={`${p.id}-${i}`} project={p} index={i} inView={inView} />
-          ))}
+          {loading
+            ? Array.from({ length: 6 }).map((_, i) => <ProjectCardSkeleton key={i} />)
+            : projects.map((p, i) => <ProjectCard key={`${p.id}-${i}`} project={p} index={i} inView={inView} />)}
         </div>
 
         <div style={{ display: "flex", justifyContent: "center", marginTop: "56px" }}>

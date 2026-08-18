@@ -5,6 +5,7 @@ import { motion, useInView } from "motion/react";
 import { Layout } from "./components/Layout";
 import { SectionLabel } from "./components/KaviAbout";
 import { ProjectCard } from "./components/ProjectCard";
+import { ProjectCardSkeleton } from "./components/ProjectCardSkeleton";
 import { usePortfolioData } from "./data/portfolioData";
 
 export default function ProjectsPage() {
@@ -34,7 +35,7 @@ export default function ProjectsPage() {
               fontFamily: "'Plus Jakarta Sans', sans-serif",
               fontSize: "clamp(32px, 5vw, 56px)",
               fontWeight: 800,
-              color: "#fff",
+              color: "var(--foreground)",
               letterSpacing: "-0.03em",
               margin: "20px 0 56px 0",
             }}
@@ -42,8 +43,21 @@ export default function ProjectsPage() {
             All projects
           </motion.h1>
 
-          {data.projects.length === 0 ? (
-            <p style={{ fontFamily: "'Inter', sans-serif", color: "rgba(255,255,255,0.5)" }}>
+          {loading ? (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(2, 1fr)",
+                gap: "48px 32px",
+              }}
+              className="all-projects-grid"
+            >
+              {Array.from({ length: 4 }).map((_, i) => (
+                <ProjectCardSkeleton key={i} />
+              ))}
+            </div>
+          ) : data.projects.length === 0 ? (
+            <p style={{ fontFamily: "'Inter', sans-serif", color: "rgba(var(--fg-rgb),0.5)" }}>
               No projects yet.
             </p>
           ) : (
