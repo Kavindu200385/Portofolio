@@ -51,6 +51,7 @@ export function AdminEducationPage() {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [logoUploading, setLogoUploading] = useState(false);
+  const [importing, setImporting] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   const { register, handleSubmit, setValue, watch, reset } = useForm<EducationForm>({
@@ -77,6 +78,25 @@ export function AdminEducationPage() {
   useEffect(() => {
     void loadEducation();
   }, []);
+
+  const onImportDefaults = async () => {
+    setImporting(true);
+    try {
+      const res = await fetch(apiUrl("/api/admin-seed-defaults"), {
+        method: "POST",
+        credentials: "include",
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.error || "Import failed");
+      const inserted = json.summary?.educationInserted ?? 0;
+      toast.success(inserted ? `Imported ${inserted} education entr${inserted === 1 ? "y" : "ies"}` : "Nothing to import");
+      await Promise.all([loadEducation(), refetch()]);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Import failed");
+    } finally {
+      setImporting(false);
+    }
+  };
 
   const present = watch("present");
   const logo = watch("logo");
@@ -182,8 +202,13 @@ export function AdminEducationPage() {
                 </TableRow>
               ) : education.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} style={{ textAlign: "center", color: "rgba(128,128,128,0.8)" }}>
-                    No education entries yet.
+                  <TableCell colSpan={4} style={{ textAlign: "center", padding: "28px 16px" }}>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
+                      <span style={{ color: "rgba(128,128,128,0.8)" }}>No education entries yet.</span>
+                      <Button type="button" variant="outline" size="sm" onClick={() => void onImportDefaults()} disabled={importing}>
+                        {importing ? "Importing…" : "Import from site defaults"}
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ) : (
