@@ -1,7 +1,9 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { NavLink } from "react-router";
+import { toast } from "sonner";
 import { Button } from "../components/ui/button";
 import { useAdminAuth } from "./AdminAuthContext";
+import { apiUrl } from "../lib/apiBase";
 
 const ADMIN_NAV = [
   { label: "Hero", to: "/admin" },
@@ -12,6 +14,34 @@ const ADMIN_NAV = [
 
 export function AdminLayout({ children }: { children: ReactNode }) {
   const { email, logout } = useAdminAuth();
+  const [seeding, setSeeding] = useState(false);
+
+  const onSeedDefaults = async () => {
+    setSeeding(true);
+    try {
+      const res = await fetch(apiUrl("/api/admin-seed-defaults"), {
+        method: "POST",
+        credentials: "include",
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.error || "Sync failed");
+      const s = json.summary || {};
+      const inserted = [
+        s.projectsInserted ? `${s.projectsInserted} project(s)` : null,
+        s.skillsInserted ? `${s.skillsInserted} skill(s)` : null,
+        s.experiencesInserted ? `${s.experiencesInserted} experience(s)` : null,
+        s.educationInserted ? `${s.educationInserted} education(s)` : null,
+        s.aboutSeeded ? "About" : null,
+        s.heroSeeded ? "Hero" : null,
+        s.contactSeeded ? "Contact" : null,
+      ].filter(Boolean);
+      toast.success(inserted.length ? `Synced: ${inserted.join(", ")}` : "Already up to date — nothing empty to sync");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Sync failed");
+    } finally {
+      setSeeding(false);
+    }
+  };
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--background)", color: "var(--foreground)" }}>
@@ -56,6 +86,9 @@ export function AdminLayout({ children }: { children: ReactNode }) {
           </nav>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <Button variant="outline" size="sm" onClick={() => void onSeedDefaults()} disabled={seeding}>
+            {seeding ? "Syncing…" : "Sync defaults to database"}
+          </Button>
           <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "13px", color: "rgba(128,128,128,0.8)" }}>
             {email}
           </span>
