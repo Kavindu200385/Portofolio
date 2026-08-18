@@ -48,7 +48,7 @@ export const defaultProjects: ProjectItem[] = [
     name: "Travel Agency Website",
     type: "Group",
     shortDescription:
-      "A full-featured travel agency e-commerce system that enables customers to explore destinations, make bookings, and submit inquiries. The platform also allows the agency to efficiently manage bookings via phpMyAdmin and receive customer inquiries through Gmail.",
+      "A full-featured travel agency e-commerce system for browsing destinations, making bookings, and managing inquiries via phpMyAdmin and Gmail.",
     longDescription:
       "This project is a complete e-commerce solution designed for a travel agency to streamline its online operations. It allows customers to browse available travel destinations, make bookings easily, and contact the agency for further information or assistance through an integrated contact form. On the administrative side, the system provides a simple yet effective way to manage customer bookings using phpMyAdmin, ensuring all booking data is organized and accessible. Additionally, all customer inquiries submitted through the contact form are automatically sent to the agency via Gmail, enabling quick responses and better customer communication. The system focuses on usability, efficient data handling, and seamless interaction between customers and the agency, making it a practical solution for small to medium-scale travel businesses.",
     thumbnail: "/photos/travel-agency-website.png",

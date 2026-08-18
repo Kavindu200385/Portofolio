@@ -104,7 +104,15 @@ export function AdminProjectsPage() {
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json?.error || "Import failed");
       const inserted = json.summary?.inserted ?? 0;
-      toast.success(inserted ? `Imported ${inserted} demo project(s)` : "All demo projects are already in the database");
+      const failed = json.summary?.failed ?? [];
+      if (inserted) {
+        toast.success(`Imported ${inserted} demo project(s)`);
+      } else if (failed.length === 0) {
+        toast.success("All demo projects are already in the database");
+      }
+      if (failed.length > 0) {
+        toast.error(`Skipped ${failed.length} project(s) due to errors: ${failed.map((f: { name: string; error: string }) => `${f.name} (${f.error})`).join("; ")}`);
+      }
       await Promise.all([loadProjects(), refetch()]);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Import failed");

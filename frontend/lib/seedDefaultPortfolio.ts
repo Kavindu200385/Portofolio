@@ -121,6 +121,7 @@ export async function importMissingDefaultProjects() {
 
   const insertedNames = [];
   const skippedNames = [];
+  const failed = [];
 
   for (const defaultProject of defaultPortfolioContent.projects) {
     const key = normalizeProjectNameKey(defaultProject.name);
@@ -128,12 +129,17 @@ export async function importMissingDefaultProjects() {
       skippedNames.push(defaultProject.name);
       continue;
     }
-    const raw = normalizeProjectBody(defaultProject);
-    await new Project({ ...raw, order: nextOrder }).save();
-    nextOrder++;
-    existingNames.add(key);
-    insertedNames.push(defaultProject.name);
+    try {
+      const raw = normalizeProjectBody(defaultProject);
+      await new Project({ ...raw, order: nextOrder }).save();
+      nextOrder++;
+      existingNames.add(key);
+      insertedNames.push(defaultProject.name);
+    } catch (e) {
+      // One bad entry (e.g. a field exceeding a schema limit) shouldn't block the rest.
+      failed.push({ name: defaultProject.name, error: e?.message || String(e) });
+    }
   }
 
-  return { inserted: insertedNames.length, insertedNames, skippedNames };
+  return { inserted: insertedNames.length, insertedNames, skippedNames, failed };
 }
