@@ -112,6 +112,7 @@ function TimelineCard({
       >
         {/* Header */}
         <div
+          className="timeline-card-header"
           style={{
             display: "flex",
             justifyContent: "space-between",
@@ -171,7 +172,7 @@ function TimelineCard({
             </div>
           </div>
           {/* Date badge */}
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0, flexWrap: "wrap", justifyContent: "flex-end" }}>
+          <div className="timeline-date-badge" style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0, flexWrap: "wrap", justifyContent: "flex-end" }}>
             {isCurrent ? (
               <>
                 <div
@@ -418,6 +419,13 @@ export function KaviTimeline() {
           }
           .timeline-card-wrapper > div > div {
             padding: 18px !important;
+          }
+          .timeline-card-header {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+          }
+          .timeline-date-badge {
+            justify-content: flex-start !important;
           }
         }
       `}</style>

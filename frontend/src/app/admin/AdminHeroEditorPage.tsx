@@ -91,7 +91,7 @@ export function AdminHeroEditorPage() {
             <Textarea rows={2} {...register("subHeading")} />
           </Field>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+          <div className="admin-grid-2">
             <Field label="CTA 1 label">
               <Input {...register("cta1Label")} />
             </Field>

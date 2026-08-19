@@ -142,7 +142,7 @@ export function AdminAboutPage() {
             <Textarea rows={2} {...register("pullQuote")} placeholder="A short quote highlighted in its own box" />
           </Field>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+          <div className="admin-grid-2">
             <Field label="Credential title">
               <Input {...register("credentialTitle")} placeholder="BSc Computer Science" />
             </Field>
@@ -151,17 +151,18 @@ export function AdminAboutPage() {
             </Field>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+          <div className="admin-grid-2">
             <Field label="Résumé / CV">
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 <Input {...register("resumeLink")} placeholder="/cv.pdf or https://…" />
-                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", minWidth: 0 }}>
                   <input
                     ref={resumeInputRef}
                     type="file"
                     accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                     onChange={onResumeChange}
                     disabled={resumeUploading}
+                    style={{ maxWidth: "100%" }}
                   />
                   {resumeUploading ? (
                     <span style={{ fontSize: "12px", color: "rgba(128,128,128,0.8)" }}>Uploading…</span>

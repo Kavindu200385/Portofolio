@@ -261,6 +261,7 @@ export function AdminProjectsPage() {
 
       <div style={{ display: "flex", flexDirection: "column", gap: "40px" }}>
         <div style={{ border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>
+          <div style={{ overflowX: "auto" }}>
           <Table>
             <TableHeader>
               <TableRow>
@@ -320,6 +321,7 @@ export function AdminProjectsPage() {
               )}
             </TableBody>
           </Table>
+          </div>
         </div>
 
         <div style={{ maxWidth: "640px" }}>
@@ -331,7 +333,7 @@ export function AdminProjectsPage() {
               <Input {...register("name", { required: true })} />
             </Field>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", alignItems: "end" }}>
+            <div className="admin-grid-2" style={{ alignItems: "end" }}>
               <Field label="Type">
                 <Select value={type} onValueChange={(v) => setValue("type", v as ProjectType, { shouldDirty: true })}>
                   <SelectTrigger>
@@ -360,7 +362,7 @@ export function AdminProjectsPage() {
               <Textarea rows={4} {...register("longDescription")} />
             </Field>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+            <div className="admin-grid-2">
               <Field label="GitHub link">
                 <Input {...register("githubLink")} placeholder="https://github.com/…" />
               </Field>

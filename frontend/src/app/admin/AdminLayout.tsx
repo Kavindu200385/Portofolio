@@ -47,6 +47,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
   return (
     <div style={{ minHeight: "100vh", background: "var(--background)", color: "var(--foreground)" }}>
       <div
+        className="admin-header"
         style={{
           position: "sticky",
           top: 0,
@@ -54,17 +55,35 @@ export function AdminLayout({ children }: { children: ReactNode }) {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          gap: "16px",
+          flexWrap: "wrap",
+          gap: "12px 16px",
           padding: "16px 24px",
           borderBottom: "1px solid var(--border)",
           background: "var(--background)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "24px", flexWrap: "wrap" }}>
-          <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: "16px", fontWeight: 800 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "24px", minWidth: 0 }}>
+          <span
+            style={{
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
+              fontSize: "16px",
+              fontWeight: 800,
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+            }}
+          >
             ✦ Kavi Admin
           </span>
-          <nav style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+          <nav
+            className="admin-nav"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+              overflowX: "auto",
+              WebkitOverflowScrolling: "touch",
+            }}
+          >
             {ADMIN_NAV.map((item) => (
               <NavLink
                 key={item.to}
@@ -79,6 +98,8 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                   color: isActive ? "var(--foreground)" : "rgba(128,128,128,0.8)",
                   background: isActive ? "rgba(79,142,247,0.14)" : "transparent",
                   textDecoration: "none",
+                  whiteSpace: "nowrap",
+                  flexShrink: 0,
                 })}
               >
                 {item.label}
@@ -86,7 +107,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
             ))}
           </nav>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        <div className="admin-actions" style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
           <Button variant="outline" size="sm" onClick={() => void onSeedDefaults()} disabled={seeding}>
             {seeding ? "Syncing…" : "Sync defaults to database"}
           </Button>
@@ -102,6 +123,23 @@ export function AdminLayout({ children }: { children: ReactNode }) {
       <div style={{ padding: "32px 24px 80px" }}>
         <div style={{ maxWidth: "880px", margin: "0 auto" }}>{children}</div>
       </div>
+
+      <style>{`
+        .admin-grid-2 {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 16px;
+        }
+        .admin-grid-2 > * {
+          min-width: 0;
+        }
+        @media (max-width: 640px) {
+          .admin-header { padding: 12px 16px !important; }
+          .admin-nav { width: 100%; }
+          .admin-actions { width: 100%; justify-content: space-between !important; }
+          .admin-grid-2 { grid-template-columns: 1fr; }
+        }
+      `}</style>
     </div>
   );
 }

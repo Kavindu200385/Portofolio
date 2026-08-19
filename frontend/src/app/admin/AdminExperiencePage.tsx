@@ -184,6 +184,7 @@ export function AdminExperiencePage() {
 
       <div style={{ display: "flex", flexDirection: "column", gap: "40px" }}>
         <div style={{ border: "1px solid var(--border)", borderRadius: "12px", overflow: "hidden" }}>
+          <div style={{ overflowX: "auto" }}>
           <Table>
             <TableHeader>
               <TableRow>
@@ -250,6 +251,7 @@ export function AdminExperiencePage() {
               )}
             </TableBody>
           </Table>
+          </div>
         </div>
 
         <div style={{ maxWidth: "640px" }}>
@@ -257,7 +259,7 @@ export function AdminExperiencePage() {
             {editingId ? "Edit experience" : "Add experience"}
           </h2>
           <form onSubmit={handleSubmit(onSubmit)} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+            <div className="admin-grid-2">
               <Field label="Company">
                 <Input {...register("companyName", { required: true })} />
               </Field>
