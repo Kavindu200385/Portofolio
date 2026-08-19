@@ -1,9 +1,10 @@
 import { apiUrl } from "../../lib/apiBase";
 
-// Matches the server's own cap (frontend/lib/api/uploadBlob.ts) — reject oversized files
-// immediately client-side instead of uploading multiple MB only to be rejected (or, worse,
-// silently dropped by a platform-level body-size limit with no usable error).
-const MAX_BYTES = 4 * 1024 * 1024;
+// Base64 inflates the raw file by ~4/3, plus a little JSON-wrapper overhead — Vercel's
+// serverless functions hard-reject any request body over ~4.5MB (a 413 at the platform level,
+// before our code even runs). Cap the RAW file well under the point where its base64 form
+// would cross that line, so the client-side check actually protects against the real limit.
+const MAX_BYTES = 3 * 1024 * 1024;
 // A hung request (e.g. a serverless function timeout that doesn't cleanly close the
 // connection) should never leave the UI stuck on "Uploading…" forever with no feedback.
 const UPLOAD_TIMEOUT_MS = 30_000;
@@ -19,7 +20,7 @@ function readFileAsDataUrl(file: File): Promise<string> {
 
 export async function uploadImage(file: File): Promise<string> {
   if (file.size > MAX_BYTES) {
-    throw new Error(`Image is too large (${(file.size / (1024 * 1024)).toFixed(1)} MB) — max 4 MB.`);
+    throw new Error(`Image is too large (${(file.size / (1024 * 1024)).toFixed(1)} MB) — max 3 MB. Compress or resize it and try again.`);
   }
 
   const dataUrl = await readFileAsDataUrl(file);
@@ -44,6 +45,9 @@ export async function uploadImage(file: File): Promise<string> {
     clearTimeout(timeout);
   }
 
+  if (res.status === 413) {
+    throw new Error("Image is too large for the server to accept — compress or resize it and try again.");
+  }
   const json = await res.json().catch(() => ({}));
   if (!res.ok) {
     throw new Error(json?.error || `Image upload failed (${res.status}).`);

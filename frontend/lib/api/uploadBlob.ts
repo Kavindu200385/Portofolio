@@ -1,7 +1,9 @@
 // @ts-nocheck
 import { put } from "@vercel/blob";
 
-const MAX_BYTES = 4 * 1024 * 1024;
+// Kept in sync with the client-side cap (frontend/src/app/admin/lib/uploadImage.ts) — 3MB
+// raw, so its base64 form stays under Vercel's ~4.5MB serverless request body limit.
+const MAX_BYTES = 3 * 1024 * 1024;
 
 /**
  * Parses a browser data URL, uploads bytes to Vercel Blob, returns public https URL.

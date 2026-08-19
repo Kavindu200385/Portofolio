@@ -105,8 +105,11 @@ export function AdminAboutPage() {
 
       <div style={{ maxWidth: "640px" }}>
         <form onSubmit={handleSubmit(onSubmit)} style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-          <Field label="Paragraph 1">
-            <Textarea rows={3} {...register("paragraphs.0")} />
+          <Field label="Name">
+            <Input {...register("name")} placeholder="Your full name — shown as the big headline" />
+          </Field>
+          <Field label="Subtitle / role description">
+            <Textarea rows={3} {...register("paragraphs.0")} placeholder="e.g. A final-year Computer Science student…" />
           </Field>
           <Field label="Paragraph 2">
             <Textarea rows={3} {...register("paragraphs.1")} />
@@ -114,6 +117,28 @@ export function AdminAboutPage() {
           <Field label="Paragraph 3">
             <Textarea rows={3} {...register("paragraphs.2")} />
           </Field>
+
+          <Field label="Pull quote">
+            <Textarea rows={2} {...register("pullQuote")} placeholder="A short quote highlighted in its own box" />
+          </Field>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+            <Field label="Credential title">
+              <Input {...register("credentialTitle")} placeholder="BSc Computer Science" />
+            </Field>
+            <Field label="Credential subtitle">
+              <Input {...register("credentialSubtitle")} placeholder="University of Plymouth · NSBM" />
+            </Field>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+            <Field label="Résumé link">
+              <Input {...register("resumeLink")} placeholder="/cv.pdf or https://…" />
+            </Field>
+            <Field label="LinkedIn URL">
+              <Input {...register("linkedinLink")} placeholder="https://linkedin.com/in/…" />
+            </Field>
+          </div>
 
           <Field label="Profile photo">
             <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>

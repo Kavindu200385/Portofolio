@@ -76,9 +76,15 @@ export type EducationItem = {
 
 export type AboutBadge = { id: string; emoji: string; label: string };
 export type AboutData = {
+  name: string;
   paragraphs: string[];
   badges: AboutBadge[];
   profilePhoto: string;
+  pullQuote: string;
+  credentialTitle: string;
+  credentialSubtitle: string;
+  resumeLink: string;
+  linkedinLink: string;
 };
 
 export type HeroData = {

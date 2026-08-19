@@ -64,9 +64,15 @@ export async function seedDefaultPortfolioIfEmpty() {
 
   if (!(await About.findOne())) {
     const payload = aboutFromClient({
+      name: defaultPortfolioContent.about.name,
       paragraphs: defaultPortfolioContent.about.paragraphs,
       badges: defaultPortfolioContent.about.badges,
       profilePhoto: defaultPortfolioContent.about.profilePhoto,
+      pullQuote: defaultPortfolioContent.about.pullQuote,
+      credentialTitle: defaultPortfolioContent.about.credentialTitle,
+      credentialSubtitle: defaultPortfolioContent.about.credentialSubtitle,
+      resumeLink: defaultPortfolioContent.about.resumeLink,
+      linkedinLink: defaultPortfolioContent.about.linkedinLink,
     });
     await About.findOneAndUpdate({}, payload, { upsert: true, new: true });
     summary.aboutSeeded = true;

@@ -10,11 +10,14 @@ export function KaviAbout() {
   const inView = useInView(ref, { once: true, margin: "-100px" });
   const { data, loading } = usePortfolioData();
   const PROFILE_IMG = data.about.profilePhoto;
+  const name = data.about.name;
   const bioLines = data.about.paragraphs;
   const tags = data.about.badges;
-  // TODO: back with a real `pullQuote` field once the About schema is extended (see plan Phase 4/5).
-  const pullQuote =
-    "I care more about shipping something that works reliably than something that just looks good in a demo.";
+  const pullQuote = data.about.pullQuote;
+  const credentialTitle = data.about.credentialTitle;
+  const credentialSubtitle = data.about.credentialSubtitle;
+  const resumeLink = data.about.resumeLink;
+  const linkedinLink = data.about.linkedinLink;
 
   return (
     <section
@@ -102,49 +105,81 @@ export function KaviAbout() {
             />
           </div>
 
-          {/* Floating experience card */}
-          <motion.div
-            animate={{ y: [0, -6, 0] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            style={{
-              position: "absolute",
-              bottom: -20,
-              right: -20,
-              zIndex: 4,
-              padding: "12px 20px",
-              borderRadius: "14px",
-              background: "rgba(14,14,28,0.95)",
-              backdropFilter: "blur(24px)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
-            }}
-          >
-            <div
+          {/* Floating experience card — entrance (outer) separate from the continuous bob (inner) */}
+          {credentialTitle ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 10 }}
+              animate={inView ? { opacity: 1, scale: 1, y: 0 } : {}}
+              transition={{ duration: 0.5, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
               style={{
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
-                fontSize: "13px",
-                fontWeight: 700,
-                color: "#fff",
+                position: "absolute",
+                bottom: -20,
+                right: -20,
+                zIndex: 4,
               }}
             >
-              BSc Computer Science
-            </div>
-            <div
-              style={{
-                fontSize: "11px",
-                color: "rgba(255,255,255,0.45)",
-                marginTop: "3px",
-                fontFamily: "'Inter', sans-serif",
-              }}
-            >
-              University of Plymouth · NSBM
-            </div>
-          </motion.div>
+              <motion.div
+                animate={{ y: [0, -6, 0] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                style={{
+                  padding: "12px 20px",
+                  borderRadius: "14px",
+                  background: "rgba(14,14,28,0.95)",
+                  backdropFilter: "blur(24px)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+                }}
+              >
+                <div
+                  style={{
+                    fontFamily: "'Plus Jakarta Sans', sans-serif",
+                    fontSize: "13px",
+                    fontWeight: 700,
+                    color: "#fff",
+                  }}
+                >
+                  {credentialTitle}
+                </div>
+                {credentialSubtitle ? (
+                  <div
+                    style={{
+                      fontSize: "11px",
+                      color: "rgba(255,255,255,0.45)",
+                      marginTop: "3px",
+                      fontFamily: "'Inter', sans-serif",
+                    }}
+                  >
+                    {credentialSubtitle}
+                  </div>
+                ) : null}
+              </motion.div>
+            </motion.div>
+          ) : null}
         </motion.div>
 
         {/* Right: bio + tags */}
         <div className="about-bio-col" style={{ flex: "1 1 380px", minWidth: 0 }}>
           <div style={{ marginBottom: "32px" }}>
+            {/* Name — the most prominent row, distinct from the description that follows */}
+            {name ? (
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={inView ? { opacity: 1, y: 0 } : {}}
+                transition={{ duration: 0.6, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                style={{
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  fontSize: "clamp(30px, 4vw, 44px)",
+                  fontWeight: 800,
+                  lineHeight: 1.15,
+                  letterSpacing: "-0.02em",
+                  color: "var(--foreground)",
+                  margin: "0 0 10px 0",
+                }}
+              >
+                {name}
+              </motion.h1>
+            ) : null}
+
             {bioLines.map((line, i) => (
               <motion.p
                 key={i}
@@ -152,18 +187,17 @@ export function KaviAbout() {
                 animate={inView ? { opacity: 1, y: 0 } : {}}
                 transition={{
                   duration: 0.6,
-                  delay: 0.3 + i * 0.12,
+                  delay: 0.9 + i * 0.5,
                   ease: [0.16, 1, 0.3, 1],
                 }}
                 style={
                   i === 0
                     ? {
-                        fontFamily: "'Plus Jakarta Sans', sans-serif",
-                        fontSize: "clamp(22px, 2.8vw, 32px)",
-                        fontWeight: 700,
-                        lineHeight: 1.35,
-                        letterSpacing: "-0.02em",
-                        color: "var(--foreground)",
+                        fontFamily: "'Inter', sans-serif",
+                        fontSize: "clamp(17px, 2vw, 20px)",
+                        fontWeight: 500,
+                        lineHeight: 1.6,
+                        color: "rgba(var(--fg-rgb),0.75)",
                         marginBottom: "20px",
                       }
                     : {
@@ -185,7 +219,7 @@ export function KaviAbout() {
             <motion.blockquote
               initial={{ opacity: 0, y: 16 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ delay: 0.6, duration: 0.5 }}
+              transition={{ delay: 2.3, duration: 0.5 }}
               style={{
                 margin: "0 0 32px 0",
                 padding: "18px 22px",
@@ -207,7 +241,7 @@ export function KaviAbout() {
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ delay: 0.7, duration: 0.5 }}
+            transition={{ delay: 2.5, duration: 0.5 }}
             style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "40px" }}
           >
             {tags.map((tag, i) => (
@@ -215,7 +249,7 @@ export function KaviAbout() {
                 key={tag.label}
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={inView ? { opacity: 1, scale: 1 } : {}}
-                transition={{ delay: 0.75 + i * 0.07, duration: 0.4 }}
+                transition={{ delay: 2.55 + i * 0.07, duration: 0.4 }}
                 whileHover={{ scale: 1.06, y: -2 }}
                 style={{
                   display: "inline-flex",
@@ -242,13 +276,13 @@ export function KaviAbout() {
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ delay: 1.0, duration: 0.5 }}
+            transition={{ delay: 2.7, duration: 0.5 }}
             style={{ display: "flex", gap: "24px", alignItems: "center", flexWrap: "wrap" }}
           >
             <motion.a
               whileHover={{ scale: 1.04, y: -2, boxShadow: "0 8px 32px rgba(79,142,247,0.3)" }}
               whileTap={{ scale: 0.97 }}
-              href="/cv.pdf"
+              href={resumeLink || "/cv.pdf"}
               download
               style={{
                 display: "inline-flex",
@@ -272,9 +306,9 @@ export function KaviAbout() {
             <motion.button
               whileHover={{ x: 3 }}
               whileTap={{ scale: 0.97 }}
-              onClick={() =>
-                window.open("https://www.linkedin.com/in/kavindu-sandaruwan-54354128a/", "_blank", "noreferrer")
-              }
+              onClick={() => {
+                if (linkedinLink) window.open(linkedinLink, "_blank", "noreferrer");
+              }}
               style={{
                 background: "none",
                 border: "none",

@@ -2,6 +2,7 @@ import mongoose, { Schema } from "mongoose";
 
 const AboutSchema = new Schema(
   {
+    name: { type: String },
     paragraph1: { type: String },
     paragraph2: { type: String },
     paragraph3: { type: String },
@@ -13,6 +14,11 @@ const AboutSchema = new Schema(
       },
     ],
     profilePhoto: { type: String },
+    pullQuote: { type: String },
+    credentialTitle: { type: String },
+    credentialSubtitle: { type: String },
+    resumeLink: { type: String },
+    linkedinLink: { type: String },
   },
   { collection: "about" },
 );

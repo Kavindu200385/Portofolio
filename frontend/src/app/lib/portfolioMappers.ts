@@ -110,6 +110,7 @@ export function mapEducationFromApi(doc: Record<string, unknown>, index: number)
 export function mapAboutFromApi(doc: Record<string, unknown> | null | undefined): AboutData | null {
   if (!doc) return null;
   return {
+    name: String(doc.name ?? ""),
     paragraphs: [
       String(doc.paragraph1 ?? ""),
       String(doc.paragraph2 ?? ""),
@@ -123,6 +124,11 @@ export function mapAboutFromApi(doc: Record<string, unknown> | null | undefined)
         }))
       : [],
     profilePhoto: String(doc.profilePhoto ?? ""),
+    pullQuote: String(doc.pullQuote ?? ""),
+    credentialTitle: String(doc.credentialTitle ?? ""),
+    credentialSubtitle: String(doc.credentialSubtitle ?? ""),
+    resumeLink: String(doc.resumeLink ?? ""),
+    linkedinLink: String(doc.linkedinLink ?? ""),
   };
 }
 

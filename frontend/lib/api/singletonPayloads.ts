@@ -7,16 +7,28 @@ export function aboutFromClient(body: any) {
       paragraph1: body.paragraphs[0] ?? "",
       paragraph2: body.paragraphs[1] ?? "",
       paragraph3: body.paragraphs[2] ?? "",
+      name: body.name ?? "",
       badges: body.badges ?? [],
       profilePhoto: body.profilePhoto ?? "",
+      pullQuote: body.pullQuote ?? "",
+      credentialTitle: body.credentialTitle ?? "",
+      credentialSubtitle: body.credentialSubtitle ?? "",
+      resumeLink: body.resumeLink ?? "",
+      linkedinLink: body.linkedinLink ?? "",
     };
   }
   return {
     paragraph1: body.paragraph1 ?? "",
     paragraph2: body.paragraph2 ?? "",
     paragraph3: body.paragraph3 ?? "",
+    name: body.name ?? "",
     badges: body.badges ?? [],
     profilePhoto: body.profilePhoto ?? "",
+    pullQuote: body.pullQuote ?? "",
+    credentialTitle: body.credentialTitle ?? "",
+    credentialSubtitle: body.credentialSubtitle ?? "",
+    resumeLink: body.resumeLink ?? "",
+    linkedinLink: body.linkedinLink ?? "",
   };
 }
 

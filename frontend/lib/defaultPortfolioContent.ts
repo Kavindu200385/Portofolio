@@ -213,8 +213,9 @@ export const defaultPortfolioContent = {
     },
   ],
   about: {
+    name: "Kavindu Sandaruwan",
     paragraphs: [
-      "I'm Kavindu Sandaruwan, a final-year Computer Science student at the University of Plymouth via NSBM Green University, Sri Lanka — and a Software Engineering Intern at Toyota Lanka.",
+      "A final-year Computer Science student at the University of Plymouth via NSBM Green University, Sri Lanka — and a Software Engineering Intern at Toyota Lanka.",
       "My passion lives at the intersection of Full Stack development and DevOps engineering. Day to day, I'm building and shipping real-world applications, containerizing services, and designing reliable CI/CD pipelines in a professional environment.",
       "I'm continuously sharpening my skills across the full stack — from crafting clean, responsive frontends to architecting scalable backends and cloud-native infrastructure. Every project is a step toward building systems that are fast, resilient, and built to last.",
     ],
@@ -225,6 +226,12 @@ export const defaultPortfolioContent = {
       { id: "b4", emoji: "🧩", label: "Full Stack" },
     ],
     profilePhoto: "/profile.png",
+    pullQuote:
+      "I care more about shipping something that works reliably than something that just looks good in a demo.",
+    credentialTitle: "BSc Computer Science",
+    credentialSubtitle: "University of Plymouth · NSBM",
+    resumeLink: "/cv.pdf",
+    linkedinLink: "https://www.linkedin.com/in/kavindu-sandaruwan-54354128a/",
   },
   hero: {
     heading: "Kavindu Sandaruwan.\nFull-Stack & DevOps Engineer.",
