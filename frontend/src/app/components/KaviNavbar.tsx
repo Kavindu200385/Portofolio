@@ -114,7 +114,7 @@ export function KaviNavbar() {
               backgroundClip: "text",
             }}
           >
-            ✦ Kavi.
+            KaviCode
           </span>
         </button>
 

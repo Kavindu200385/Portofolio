@@ -4,7 +4,6 @@ import type { CSSProperties } from "react";
 const socials = [
   { label: "GitHub", href: "https://github.com/Kavindu200385" },
   { label: "LinkedIn", href: "https://www.linkedin.com/in/kavindu-sandaruwan-54354128a/" },
-  { label: "X / Twitter", href: "https://x.com" },
 ];
 
 function scrollToTop() {
