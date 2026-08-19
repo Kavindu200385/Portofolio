@@ -165,6 +165,21 @@ export default async function handler(req: any, res: any) {
       return res.status(200).json({ url: result.url });
     }
 
+    // —— Admin: résumé/CV document upload → Vercel Blob (no DB connection required) ——
+    if (seg[0] === "admin-upload-document" && seg.length === 1 && method === "POST") {
+      if (!(await requireAdminJwt(req, res))) return;
+      const dataUrl = req.body?.dataUrl;
+      if (typeof dataUrl !== "string") {
+        return res.status(400).json({ error: "Expected JSON body { dataUrl: string }" });
+      }
+      const { uploadPortfolioDocumentFromDataUrl } = await import("../frontend/lib/api/uploadBlob.js");
+      const result = await uploadPortfolioDocumentFromDataUrl(dataUrl);
+      if (result.error) {
+        return res.status(result.status ?? 500).json({ error: result.error });
+      }
+      return res.status(200).json({ url: result.url });
+    }
+
     // —— Admin: hero video upload → client-direct-to-Blob token endpoint (no DB connection required) ——
     if (seg[0] === "admin-hero-video-upload" && seg.length === 1 && method === "POST") {
       const { handleUpload } = await import("@vercel/blob/client");

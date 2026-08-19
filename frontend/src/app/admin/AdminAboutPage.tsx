@@ -8,13 +8,16 @@ import { Button } from "../components/ui/button";
 import { usePortfolioData, type AboutData } from "../data/portfolioData";
 import { apiUrl } from "../lib/apiBase";
 import { uploadImage } from "./lib/uploadImage";
+import { uploadDocument } from "./lib/uploadDocument";
 import { AdminLayout } from "./AdminLayout";
 
 export function AdminAboutPage() {
   const { data, refetch } = usePortfolioData();
   const [photoUploading, setPhotoUploading] = useState(false);
+  const [resumeUploading, setResumeUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const resumeInputRef = useRef<HTMLInputElement>(null);
 
   const {
     register,
@@ -35,6 +38,7 @@ export function AdminAboutPage() {
   }, [data.about]);
 
   const profilePhoto = watch("profilePhoto");
+  const resumeLink = watch("resumeLink");
   const badges = watch("badges");
 
   const onPhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -50,6 +54,22 @@ export function AdminAboutPage() {
     } finally {
       setPhotoUploading(false);
       if (photoInputRef.current) photoInputRef.current.value = "";
+    }
+  };
+
+  const onResumeChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setResumeUploading(true);
+    try {
+      const url = await uploadDocument(file);
+      setValue("resumeLink", url, { shouldDirty: true });
+      toast.success("Résumé uploaded");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Résumé upload failed");
+    } finally {
+      setResumeUploading(false);
+      if (resumeInputRef.current) resumeInputRef.current.value = "";
     }
   };
 
@@ -132,8 +152,26 @@ export function AdminAboutPage() {
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-            <Field label="Résumé link">
-              <Input {...register("resumeLink")} placeholder="/cv.pdf or https://…" />
+            <Field label="Résumé / CV">
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <Input {...register("resumeLink")} placeholder="/cv.pdf or https://…" />
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <input
+                    ref={resumeInputRef}
+                    type="file"
+                    accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    onChange={onResumeChange}
+                    disabled={resumeUploading}
+                  />
+                  {resumeUploading ? (
+                    <span style={{ fontSize: "12px", color: "rgba(128,128,128,0.8)" }}>Uploading…</span>
+                  ) : resumeLink ? (
+                    <a href={resumeLink} target="_blank" rel="noreferrer" style={{ fontSize: "12px" }}>
+                      View current
+                    </a>
+                  ) : null}
+                </div>
+              </div>
             </Field>
             <Field label="LinkedIn URL">
               <Input {...register("linkedinLink")} placeholder="https://linkedin.com/in/…" />
